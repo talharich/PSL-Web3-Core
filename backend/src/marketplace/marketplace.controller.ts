@@ -47,18 +47,16 @@ export class MarketplaceController {
   getStats() {
     return this.marketplaceService.getPlatformStats();
   }
-
+   // GET /marketplace/yield/accumulated
+  @Get('yield/accumulated')
+  async getAccumulated() {
+    const total = await this.marketplaceService.getTotalYieldAccumulated();
+    return { totalAccumulatedEth: total };
+  }
   // GET /marketplace/yield/:tokenId
   @Get('yield/:tokenId')
   async getYield(@Param('tokenId', ParseIntPipe) tokenId: number) {
     const claimable = await this.marketplaceService.getClaimableYield(tokenId);
     return { tokenId, claimableEth: claimable };
-  }
-
-  // GET /marketplace/yield/accumulated
-  @Get('yield/accumulated')
-  async getAccumulated() {
-    const total = await this.marketplaceService.getTotalYieldAccumulated();
-    return { totalAccumulatedEth: total };
   }
 }
