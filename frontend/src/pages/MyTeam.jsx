@@ -1,6 +1,7 @@
 import PlayerCard from "../components/PlayerCard";
 import { players } from "../data/mockData";
 import teamPitchBackground from "../../Pics/background_pic.png";
+import logo from "../../Pics/PSL-logo.png";
 
 const formation = [
   { left: "50%", top: "2%" },  
@@ -44,9 +45,12 @@ function MyTeam() {
         </ul>
       </div>
 
-      <h2 className="relative z-10 mb-8 inline-block select-none bg-gradient-to-r from-emerald-300 via-teal-200 to-lime-200 bg-clip-text text-2xl font-extrabold uppercase tracking-[0.15em] text-transparent drop-shadow-[0_0_15px_rgba(52,211,153,0.3)] md:text-3xl">
-        My Fantasy Best 11
-      </h2>
+      <div className="relative z-10 mb-8 flex items-center justify-center gap-6">
+        <img src={logo} alt="PSL Logo" className="h-16 w-16 md:h-24 md:w-24 scale-110 object-contain drop-shadow-[0_0_15px_rgba(163,230,53,0.6)]" />
+        <h2 className="select-none bg-gradient-to-r from-emerald-300 via-teal-200 to-lime-200 bg-clip-text text-2xl font-extrabold uppercase tracking-[0.15em] text-transparent drop-shadow-[0_0_15px_rgba(52,211,153,0.3)] md:text-3xl lg:text-4xl">
+          My Fantasy Best 11
+        </h2>
+      </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:hidden">
         {eleven.map((player, index) => (

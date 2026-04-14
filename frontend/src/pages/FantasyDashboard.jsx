@@ -12,6 +12,22 @@ function FilterPanel({ title, children }) {
   );
 }
 
+import lqLogo from "../../Pics/Lahore-Qalandars-PSL-Team-.png";
+import kkLogo from "../../Pics/Karachi-Kings-PSL-Team-.png";
+import iuLogo from "../../Pics/Islamabad-United-PSL-Team-.png";
+import msLogo from "../../Pics/Multan-Sultans-PSL-Team-.png";
+import pzLogo from "../../Pics/Peshawar-Zalmi-PSL-Team-.png";
+import qgLogo from "../../Pics/Quetta-Gladiators-PSL-Team-.png";
+
+const teamFilters = [
+  { id: "LQ", logo: lqLogo },
+  { id: "KK", logo: kkLogo },
+  { id: "IU", logo: iuLogo },
+  { id: "MS", logo: msLogo },
+  { id: "PZ", logo: pzLogo },
+  { id: "QG", logo: qgLogo },
+];
+
 import pslBackground from "../../Pics/PSL-Background.png";
 
 function FantasyDashboard() {
@@ -29,13 +45,13 @@ function FantasyDashboard() {
       <div className="relative z-10 grid gap-6 lg:grid-cols-[280px_1fr]">
         <aside className="space-y-4">
           <FilterPanel title="Filter by Team">
-            <div className="grid grid-cols-3 gap-2">
-              {["LQ", "KK", "IU", "MS"].map((code) => (
+            <div className="grid grid-cols-3 gap-3">
+              {teamFilters.map((team) => (
                 <div
-                  key={code}
-                  className="ui-hover-chip flex h-10 cursor-pointer items-center justify-center rounded-full border border-lime-300/30 bg-gradient-to-br from-emerald-900/40 to-[#0a140a]/80 text-xs font-black tracking-[0.15em] text-lime-100 shadow-[0_0_10px_rgba(163,230,53,0.1)] transition-all hover:border-lime-300 hover:text-lime-300 hover:shadow-[0_0_15px_rgba(163,230,53,0.4)]"
+                  key={team.id}
+                  className="ui-hover-chip flex h-14 w-full cursor-pointer items-center justify-center rounded-xl border border-lime-300/20 bg-gradient-to-br from-emerald-900/40 to-[#0a140a]/80 p-2 shadow-[0_0_10px_rgba(163,230,53,0.1)] transition-all hover:scale-105 hover:border-lime-300 hover:shadow-[0_0_15px_rgba(163,230,53,0.4)]"
                 >
-                  {code}
+                  <img src={team.logo} alt={team.id} className="h-full w-full object-contain drop-shadow-md" />
                 </div>
               ))}
             </div>
