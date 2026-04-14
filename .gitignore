@@ -1,9 +1,8 @@
 # Node modules
 /node_modules
-
 # Compilation output
 /dist
-
+./env
 # pnpm deploy output
 /bundle
 
