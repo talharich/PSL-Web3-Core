@@ -1,7 +1,7 @@
 import PlayerCard from "../components/PlayerCard";
 import { players } from "../data/mockData";
 
-import pslBackground from "../../Pics/PSL-Background.png";
+import marketBg from "../../Pics/Market_Place.png";
 
 function Marketplace() {
   return (
@@ -9,7 +9,7 @@ function Marketplace() {
       <div
         className="fixed inset-0 z-0 pointer-events-none"
         style={{
-          backgroundImage: `linear-gradient(to bottom, rgba(5, 10, 6, 0.3), rgba(7, 11, 8, 0.62), rgba(10, 14, 8, 0.85)), url(${pslBackground})`,
+          backgroundImage: `linear-gradient(to bottom, rgba(5, 10, 6, 0.4), rgba(7, 11, 8, 0.7), rgba(10, 14, 8, 0.9)), url(${marketBg})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
