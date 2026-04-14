@@ -8,6 +8,7 @@ import { OracleModule } from './oracle/oracle.module';
 import { NftModule } from './nft/nft.module';
 import { MarketplaceModule } from './marketplace/marketplace.module';
 import { CommonModule } from './common/common.module';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { CommonModule } from './common/common.module';
     OracleModule,
     NftModule,
     MarketplaceModule,
+    PaymentModule,
   ],
 })
 export class AppModule {}
