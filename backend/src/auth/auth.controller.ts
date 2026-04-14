@@ -9,15 +9,27 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { IsEmail, IsString, IsOptional, MinLength } from 'class-validator';
 
 class SignupDto {
+  @IsEmail({}, { message: 'Please provide a valid email' })
   email: string;
+
+  @IsString()
+  @MinLength(10, { message: 'Password must be at least 10 characters' })
   password: string;
+
+  @IsOptional()
+  @IsString()
   displayName?: string;
 }
 
 class LoginDto {
+  @IsEmail({}, { message: 'Please provide a valid email' })
   email: string;
+
+  @IsString()
+  @MinLength(10, { message: 'Password must be at least 10 characters' })
   password: string;
 }
 
