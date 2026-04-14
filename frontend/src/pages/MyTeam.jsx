@@ -1,30 +1,42 @@
 import PlayerCard from "../components/PlayerCard";
 import { players } from "../data/mockData";
+import teamPitchBackground from "../../Pics/background_pic.png";
 
 const formation = [
-  { left: "50%", top: "14%" },
-  { left: "35%", top: "24%" },
-  { left: "65%", top: "24%" },
-  { left: "22%", top: "40%" },
-  { left: "40%", top: "40%" },
-  { left: "60%", top: "40%" },
-  { left: "78%", top: "40%" },
-  { left: "16%", top: "62%" },
-  { left: "36%", top: "67%" },
-  { left: "64%", top: "67%" },
-  { left: "84%", top: "62%" },
+  { left: "50%", top: "2%" },  
+
+  { left: "33%", top: "18%" }, 
+  { left: "67%", top: "18%" }, 
+
+  { left: "16%", top: "36%" }, 
+  { left: "50%", top: "36%" }, 
+  { left: "84%", top: "36%" }, 
+
+  { left: "33%", top: "54%" }, 
+  { left: "67%", top: "54%" }, 
+
+  { left: "16%", top: "74%" }, 
+  { left: "50%", top: "74%" }, 
+  { left: "84%", top: "74%" }, 
 ];
 
 function MyTeam() {
   const eleven = players.slice(0, 11);
 
   return (
-    <section className="relative min-h-[820px] overflow-hidden rounded-2xl border border-white/15 bg-gradient-to-b from-[#162311] via-[#2c421c]/80 to-[#0a0e08] p-4 md:p-6">
-      <div className="pointer-events-none absolute inset-6 rounded-2xl border border-white/15" />
-      <div className="pointer-events-none absolute bottom-[14%] left-1/2 h-24 w-48 -translate-x-1/2 rounded border-2 border-pitch-line/70" />
-      <div className="pointer-events-none absolute bottom-[20%] left-1/2 h-2 w-56 -translate-x-1/2 bg-pitch-line/70" />
-
-      <div className="ui-hover-panel absolute right-4 top-4 z-20 rounded-xl border border-white/20 bg-[#1e2e17]/70 p-4 shadow-cyanGlow backdrop-blur-md">
+    <>
+      <div
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{
+          backgroundImage: `linear-gradient(to bottom, rgba(5, 10, 6, 0.3), rgba(7, 11, 8, 0.62), rgba(10, 14, 8, 0.85)), url(${teamPitchBackground})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      />
+      
+      <section className="relative z-10 min-h-[960px] pt-4 md:pt-6">
+        <div className="ui-hover-panel absolute right-4 top-4 z-20 rounded-xl border border-white/20 bg-[#1e2e17]/70 p-4 shadow-cyanGlow backdrop-blur-md">
         <h3 className="text-sm font-semibold text-lime-100">Team Score Prediction: 425 pts</h3>
         <ul className="mt-2 space-y-1 text-xs text-zinc-100">
           <li>3x Captain Multiplier</li>
@@ -32,7 +44,9 @@ function MyTeam() {
         </ul>
       </div>
 
-      <h2 className="relative z-10 mb-4 text-xl font-bold uppercase tracking-wide text-zinc-100">My Fantasy Best 11</h2>
+      <h2 className="relative z-10 mb-8 inline-block select-none bg-gradient-to-r from-emerald-300 via-teal-200 to-lime-200 bg-clip-text text-2xl font-extrabold uppercase tracking-[0.15em] text-transparent drop-shadow-[0_0_15px_rgba(52,211,153,0.3)] md:text-3xl">
+        My Fantasy Best 11
+      </h2>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:hidden">
         {eleven.map((player, index) => (
@@ -40,18 +54,19 @@ function MyTeam() {
         ))}
       </div>
 
-      <div className="relative hidden h-[720px] lg:block">
+      <div className="relative hidden lg:block" style={{ height: "1150px" }}>
         {eleven.map((player, index) => (
           <div
             key={player.id}
-            className="absolute w-[128px] -translate-x-1/2 xl:w-[140px]"
-            style={{ left: formation[index].left, top: formation[index].top }}
+            className="absolute flex justify-center w-[180px] -translate-x-1/2"
+            style={{ left: formation[index].left, top: formation[index].top, zIndex: 30 - index }}
           >
             <PlayerCard player={player} isActive={index === 3 || index === 4} compact />
           </div>
         ))}
       </div>
     </section>
+    </>
   );
 }
 

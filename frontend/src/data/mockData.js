@@ -25,7 +25,8 @@ const sampleNames = [
 ];
 
 export const players = sampleNames.map((name, index) => {
-  const rarity = index % 4 === 0 ? "legendary" : "common";
+  const rarities = ["legendary", "epic", "rare", "common"];
+  const rarity = rarities[index % 4];
   return {
     id: `p-${index + 1}`,
     name,
