@@ -48,9 +48,9 @@ function PlayerCard({ player, isActive = false, compact = false, className = "",
   const rarity = rarityUI[player.rarity] || rarityUI.common;
   const isBowler = player.role === "Bowler";
 
-  // Match the screenshot's mock subtext structures
-  const momentText = isBowler ? "HAT-TRICK VS PESHAWAR" : "CRUCIAL 60* VS KARACHI";
-  const momentQuote = isBowler ? `"5 wickets - 4.2 overs"` : `"42 off 18 — match winner"`;
+  // Consume dynamic subtext correctly from the data layer
+  const momentText = player.momentText || "";
+  const momentQuote = player.momentQuote || "";
   const performanceFill = Math.min((player.rating / 100) * 100, 100);
 
   function handleMouseMove(event) {
@@ -136,7 +136,7 @@ function PlayerCard({ player, isActive = false, compact = false, className = "",
         <div className="flex flex-col space-y-3" style={{ transform: "translateZ(30px)", transformStyle: "preserve-3d" }}>
            <div>
              <h3 className={`font-bold text-white ${compact ? "text-[15px]" : "text-[17px]"}`}>{player.name}</h3>
-             <p className="text-zinc-500 text-[11px] font-medium tracking-wide">{player.team} Qalandars</p>
+             <p className="text-zinc-500 text-[11px] font-medium tracking-wide">{player.team}</p>
              <p className={`text-[11px] mt-0.5 tracking-wide ${rarity.color}`}>{momentText}</p>
            </div>
            
