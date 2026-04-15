@@ -8,14 +8,15 @@ import * as mockData from '../../data/mockPSLStats.json';
 // ─── Score calculator ─────────────────────────────────────────────────────────
 
 const MILESTONE_POINTS: Record<string, number> = {
-  century: 80,
-  half_century: 30,
+  century:          80,
+  half_century:     30,
   five_wicket_haul: 90,
-  hat_trick: 100,
-  six_sixes: 200,       // Deadshot tier — instant max
-  player_of_match: 40,
-  psl_title: 150,
-  national_squad: 50,
+  hat_trick:        100,
+  six_sixes:        200,   // Deadshot LEGENDARY — instant max
+  perfect_spell:    200,   // Deadshot LEGENDARY
+  player_of_match:  40,
+  psl_title:        150,
+  national_squad:   50,
 };
 
 interface PlayerData {
@@ -37,21 +38,14 @@ export function calculatePerformanceScore(player: PlayerData): {
       ? last5.reduce((s, m) => s + m.formPoints, 0) / last5.length
       : 0;
 
-  const formScore = (avgForm / 100) * 400;
-  const milestoneScore = Math.min(
-    player.milestones.reduce((s, m) => s + m.points, 0),
-    250,
-  );
-  const popScore =
-    player.maxTradeVolume > 0
-      ? (player.tradeVolume / player.maxTradeVolume) * 200
-      : 0;
-  const rarityScore = (player.mintRarity / 100) * 150;
+  const formScore      = (avgForm / 100) * 400;
+  const milestoneScore = Math.min(player.milestones.reduce((s, m) => s + m.points, 0), 250);
+  const popScore       = player.maxTradeVolume > 0
+    ? (player.tradeVolume / player.maxTradeVolume) * 200
+    : 0;
+  const rarityScore    = (player.mintRarity / 100) * 150;
 
-  const total = Math.min(
-    Math.round(formScore + milestoneScore + popScore + rarityScore),
-    1000,
-  );
+  const total = Math.min(Math.round(formScore + milestoneScore + popScore + rarityScore), 1000);
 
   return {
     total,
@@ -60,11 +54,12 @@ export function calculatePerformanceScore(player: PlayerData): {
   };
 }
 
+// Deadshot.io rarity scheme thresholds
 function getTierFromScore(score: number): string {
-  if (score >= 900) return 'ICON';
-  if (score >= 700) return 'LEGEND';
-  if (score >= 450) return 'EPIC';
-  if (score >= 200) return 'RARE';
+  if (score >= 900) return 'LEGENDARY';
+  if (score >= 700) return 'EPIC';
+  if (score >= 450) return 'RARE';
+  if (score >= 200) return 'UNCOMMON';
   return 'COMMON';
 }
 
@@ -92,11 +87,9 @@ export class OracleService {
 
     this.logger.log(`Triggering upgrade: ${event.playerName} — ${event.stat} → ${event.rarityTrigger}`);
 
-    // 1. Build + pin metadata to IPFS
     const imageCid = this.metadataService.getTierImageCid(event.rarityTrigger);
-    const ipfsUri = await this.metadataService.pinMetadata(event, imageCid);
+    const ipfsUri  = await this.metadataService.pinMetadata(event, imageCid);
 
-    // 2. Push stats on-chain → smart contract runs upgrade logic
     const tx = await this.chain.oracleContract.updatePlayerStats(
       event.playerId,
       event.runs ?? 0,
@@ -107,20 +100,16 @@ export class OracleService {
     );
     const receipt = await tx.wait();
 
-    // 3. Read which tokenIds were upgraded (from TierUpgraded events in receipt)
     const upgradedTokenIds = this.parseUpgradeEvents(receipt);
 
-    // 4. Get old tier before upgrade (read from chain for first affected token)
     let oldTier = 'COMMON';
     if (upgradedTokenIds.length > 0) {
       try {
         const tierNum = await this.chain.nftContract.tokenTier(upgradedTokenIds[0]);
-        // The event fired means it upgraded, so old tier was one below
         oldTier = TIER_NAMES[Math.max(0, Number(tierNum) - 1)] ?? 'COMMON';
       } catch (_) {}
     }
 
-    // 5. Broadcast to all WebSocket clients — frontend animates immediately
     const metadata = this.metadataService.buildMetadata(event, imageCid);
     this.eventsGateway.broadcastUpgrade({
       eventId,
@@ -137,7 +126,7 @@ export class OracleService {
     return { txHash: receipt.hash, newTier: event.rarityTrigger, tokenIds: upgradedTokenIds, ipfsUri };
   }
 
-  // ── Deadshot mint: ICON/LEGEND minted directly at high tier, no evolution ──
+  // ── Deadshot mint: LEGENDARY minted directly, no evolution path ───────────
   async mintAtTier(
     toAddress: string,
     playerId: string,
@@ -151,19 +140,13 @@ export class OracleService {
     if (tierNum === undefined) throw new Error(`Unknown tier: ${tier}`);
 
     const imageCid = this.metadataService.getTierImageCid(tier);
-    const ipfsUri = await this.metadataService.pinMetadata(event, imageCid);
+    const ipfsUri  = await this.metadataService.pinMetadata(event, imageCid);
 
     this.logger.log(`Minting ${tier} directly for ${playerId} → ${toAddress}`);
 
-    const tx = await this.chain.nftContract.mintAtTier(
-      toAddress,
-      playerId,
-      ipfsUri,
-      tierNum,
-    );
+    const tx = await this.chain.nftContract.mintAtTier(toAddress, playerId, ipfsUri, tierNum);
     const receipt = await tx.wait();
 
-    // Parse MomentMinted event to get the new tokenId
     const tokenId = this.parseMintEvent(receipt);
 
     this.eventsGateway.broadcastMint({
@@ -184,7 +167,6 @@ export class OracleService {
     return receipt.hash;
   }
 
-  // ── Score calculator (public, used by NFT service too) ───────────────────
   calculateScore(playerData: PlayerData) {
     return calculatePerformanceScore(playerData);
   }
@@ -193,12 +175,11 @@ export class OracleService {
     return MILESTONE_POINTS;
   }
 
-  // ── List all available mock events ───────────────────────────────────────
   listMockEvents(): CricketEvent[] {
     return (mockData as any).matches.flatMap((m: any) => m.events);
   }
 
-  // ─── Private helpers ─────────────────────────────────────────────────────
+  // ─── Private helpers ──────────────────────────────────────────────────────
 
   private findEvent(eventId: string): CricketEvent | undefined {
     return (mockData as any).matches
@@ -209,16 +190,12 @@ export class OracleService {
   private parseUpgradeEvents(receipt: any): number[] {
     const iface = this.chain.oracleContract.interface;
     const tokenIds: number[] = [];
-
     for (const log of receipt.logs ?? []) {
       try {
         const parsed = iface.parseLog(log);
-        if (parsed?.name === 'UpgradeTriggered') {
-          tokenIds.push(Number(parsed.args.tokenId));
-        }
+        if (parsed?.name === 'UpgradeTriggered') tokenIds.push(Number(parsed.args.tokenId));
       } catch (_) {}
     }
-
     return tokenIds;
   }
 
@@ -227,9 +204,7 @@ export class OracleService {
     for (const log of receipt.logs ?? []) {
       try {
         const parsed = iface.parseLog(log);
-        if (parsed?.name === 'MomentMinted') {
-          return Number(parsed.args.tokenId);
-        }
+        if (parsed?.name === 'MomentMinted') return Number(parsed.args.tokenId);
       } catch (_) {}
     }
     return -1;

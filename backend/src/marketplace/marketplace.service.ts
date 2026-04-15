@@ -19,8 +19,8 @@ export interface SaleRecord {
   buyer: string;
   seller: string;
   price: string;
-  royalty: string;     // 10% to player TBA
-  platformFee: string; // 5% to yield contract
+  royalty: string;        // 10% to player TBA
+  platformFee: string;    // 5% to yield contract
   sellerProceeds: string; // 85%
   txHash: string;
   blockNumber: number;
@@ -28,12 +28,18 @@ export interface SaleRecord {
 }
 
 @Injectable()
-export class MarketplaceService {
+export class MarketplaceService implements OnModuleInit {
   private readonly logger = new Logger(MarketplaceService.name);
+
+  // RPC providers cap eth_getLogs at 10,000 blocks per query — stay under it
+  private readonly BLOCK_CHUNK = 9_500;
 
   // In-memory sale history cache — in production use a database
   private saleHistory: SaleRecord[] = [];
   private listingCache: Map<number, Listing> = new Map();
+
+  // Track the block at which contracts were deployed so we don't scan from 0
+  private deployBlock: number | null = null;
 
   constructor(
     private readonly chain: ChainProvider,
@@ -41,36 +47,72 @@ export class MarketplaceService {
   ) {}
 
   onModuleInit() {
-    this.startEventListeners(); 
+    this.startEventListeners();
 
-    // Re-attach listeners if WebSocket reconnects
+    // Re-attach listeners if the provider reconnects
     this.chain.onReconnect = () => {
       this.logger.warn('Reconnected — re-attaching marketplace listeners');
       this.startEventListeners();
     };
   }
 
+  // ── Paginated log fetcher ─────────────────────────────────────────────────
+  // Splits any [fromBlock, latest] range into 9,500-block chunks to stay within
+  // the RPC provider's 10,000-block eth_getLogs limit.
+  private async fetchLogsInChunks(
+    filter: ethers.ContractEventName,
+    contract: ethers.Contract,
+  ): Promise<ethers.EventLog[]> {
+    const fromBlock = this.deployBlock ?? 0;
+    const latestBlock = await this.chain.provider.getBlockNumber();
+
+    if (fromBlock > latestBlock) return [];
+
+    const chunks: Array<{ from: number; to: number }> = [];
+    for (let start = fromBlock; start <= latestBlock; start += this.BLOCK_CHUNK) {
+      chunks.push({
+        from: start,
+        to: Math.min(start + this.BLOCK_CHUNK - 1, latestBlock),
+      });
+    }
+
+    // Fetch chunks sequentially to respect rate limits on free-tier RPCs.
+    // Switch to Promise.all batches if you're on a paid plan and need speed.
+    const allEvents: ethers.EventLog[] = [];
+    for (const { from, to } of chunks) {
+      try {
+        const events = await contract.queryFilter(filter, from, to);
+        allEvents.push(...(events as ethers.EventLog[]));
+      } catch (err) {
+        this.logger.warn(
+          `Log chunk [${from}–${to}] failed: ${err.message} — skipping chunk`,
+        );
+      }
+    }
+
+    return allEvents;
+  }
+
   // ── Active listings ───────────────────────────────────────────────────────
   async getActiveListings(): Promise<Listing[]> {
-    // We scan from the Listed events and filter for active ones.
-    // For a hackathon with a small token count this is fine.
-    const filter = this.chain.marketplaceContract.filters.Listed();
-    const events = await this.chain.marketplaceContract.queryFilter(filter, -10000);
+    const events = await this.fetchLogsInChunks(
+      this.chain.marketplaceContract.filters.Listed(),
+      this.chain.marketplaceContract,
+    );
 
     const listings: Listing[] = [];
 
     for (const event of events) {
       const tokenId = Number((event as any).args?.tokenId ?? 0);
-      if (!tokenId) continue;
+      if (!tokenId && tokenId !== 0) continue;
 
       try {
         const listing = await this.chain.marketplaceContract.listings(tokenId);
         if (!listing.active) continue;
 
-        // Enrich with NFT data
         const [tierRaw, playerIdStr, tokenUri] = await Promise.all([
           this.chain.nftContract.tokenTier(tokenId),
-          this.chain.nftContract.playerId(tokenId),
+          this.chain.nftContract.tokenPlayer(tokenId),
           this.chain.nftContract.tokenURI(tokenId),
         ]);
 
@@ -101,7 +143,7 @@ export class MarketplaceService {
 
       const [tierRaw, playerIdStr, tokenUri] = await Promise.all([
         this.chain.nftContract.tokenTier(tokenId),
-        this.chain.nftContract.playerId(tokenId),
+        this.chain.nftContract.tokenPlayer(tokenId),
         this.chain.nftContract.tokenURI(tokenId),
       ]);
 
@@ -129,12 +171,15 @@ export class MarketplaceService {
         ? this.chain.marketplaceContract.filters.Sold(tokenId)
         : this.chain.marketplaceContract.filters.Sold();
 
-      const events = await this.chain.marketplaceContract.queryFilter(filter, -50000);
+      const events = await this.fetchLogsInChunks(filter, this.chain.marketplaceContract);
       const records: SaleRecord[] = [];
 
       for (const event of events) {
         const args = (event as any).args;
         if (!args) continue;
+
+        // Filter by tokenId if requested
+        if (tokenId !== undefined && Number(args.tokenId) !== tokenId) continue;
 
         const price = BigInt(args.price ?? 0);
         const royalty = (price * BigInt(10)) / BigInt(100);
@@ -172,14 +217,8 @@ export class MarketplaceService {
       this.getTotalYieldAccumulated(),
     ]);
 
-    const totalVolume = allSales.reduce(
-      (sum, s) => sum + parseFloat(s.price),
-      0,
-    );
-    const totalRoyaltiesPaid = allSales.reduce(
-      (sum, s) => sum + parseFloat(s.royalty),
-      0,
-    );
+    const totalVolume = allSales.reduce((sum, s) => sum + parseFloat(s.price), 0);
+    const totalRoyaltiesPaid = allSales.reduce((sum, s) => sum + parseFloat(s.royalty), 0);
 
     return {
       totalSales: allSales.length,
@@ -214,10 +253,16 @@ export class MarketplaceService {
     return all.filter((l) => l.playerId === playerId);
   }
 
+  // ── Set the deploy block so we don't scan from block 0 ───────────────────
+  // Call this from the module init after you know your contract deploy block.
+  // Example: set MARKETPLACE_DEPLOY_BLOCK in your .env and pass it here.
+  setDeployBlock(block: number) {
+    this.deployBlock = block;
+    this.logger.log(`Marketplace deploy block set to: ${block}`);
+  }
+
   // ── Real-time event listeners ─────────────────────────────────────────────
-  // These run server-side and push events to connected WebSocket clients.
   private startEventListeners() {
-    // Listen for new listings
     this.chain.marketplaceContract.on('Listed', (tokenId, seller, price) => {
       this.listingCache.delete(Number(tokenId));
       this.logger.log(`New listing: token ${tokenId} at ${ethers.formatEther(price)} ETH`);
@@ -228,8 +273,7 @@ export class MarketplaceService {
       });
     });
 
-    // Listen for sales — broadcast the split so frontend can show it live
-    this.chain.marketplaceContract.on('Sold', async (tokenId, buyer, price, event) => {
+    this.chain.marketplaceContract.on('Sold', async (tokenId, buyer, price, _royalty, _fee, event) => {
       this.listingCache.delete(Number(tokenId));
       const priceWei = BigInt(price);
       const royalty = (priceWei * BigInt(10)) / BigInt(100);
@@ -263,4 +307,3 @@ export class MarketplaceService {
     this.logger.log('Marketplace event listeners started');
   }
 }
-//

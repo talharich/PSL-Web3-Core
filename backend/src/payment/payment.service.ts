@@ -14,13 +14,13 @@ import { UsersService } from '../users/users.service';
 import { TIER_FROM_STRING } from '../common/abi/contracts';
 import * as mockData from '../../data/mockPSLStats.json';
 
-// USD price per tier — displayed on the buy page
+// USD price per tier — Deadshot.io rarity scheme
 export const TIER_PRICES_USD: Record<string, number> = {
-  COMMON: 25,
-  RARE: 150,
-  EPIC: 800,
-  LEGEND: 3500,
-  ICON: 15000,
+  COMMON:    25,
+  UNCOMMON:  150,
+  RARE:      800,
+  EPIC:      3500,
+  LEGENDARY: 15000,
 };
 
 @Injectable()
@@ -42,7 +42,6 @@ export class PaymentService {
   }
 
   // ── Step 1: Create a Stripe PaymentIntent ────────────────────────────────
-  // Frontend calls this first, gets a clientSecret, then renders Stripe Elements
   async createPaymentIntent(
     eventId: string,
     userId: string,
@@ -53,8 +52,8 @@ export class PaymentService {
     const user = this.usersService.findById(userId);
     if (!user) throw new NotFoundException('User not found');
 
-    const priceUsd = TIER_PRICES_USD[event.rarityTrigger] ?? 25;
-    const amountCents = priceUsd * 100; // Stripe uses cents
+    const priceUsd    = TIER_PRICES_USD[event.rarityTrigger] ?? 25;
+    const amountCents = priceUsd * 100;
 
     const paymentIntent = await this.stripe.paymentIntents.create({
       amount: amountCents,
@@ -81,18 +80,12 @@ export class PaymentService {
   }
 
   // ── Step 2: Stripe webhook — payment confirmed, mint the NFT ────────────
-  // Stripe calls this endpoint after a successful payment.
-  // In test mode this fires automatically — no real money needed.
   async handleWebhook(rawBody: Buffer, signature: string): Promise<void> {
     const webhookSecret = this.config.get<string>('stripe.webhookSecret');
     let stripeEvent: StripeTypes.Event;
 
     try {
-      stripeEvent = this.stripe.webhooks.constructEvent(
-        rawBody,
-        signature,
-        webhookSecret,
-      );
+      stripeEvent = this.stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
     } catch (err) {
       throw new BadRequestException(`Webhook signature failed: ${err.message}`);
     }
@@ -104,8 +97,6 @@ export class PaymentService {
   }
 
   // ── Step 2 (demo only): Confirm payment without real Stripe ─────────────
-  // For the hackathon stage demo — skips Stripe entirely.
-  // Frontend hits this after the fake card form.
   async confirmDemoPayment(
     eventId: string,
     userId: string,
@@ -122,12 +113,10 @@ export class PaymentService {
   // ── Internal: actually mint the NFT after payment ────────────────────────
   private async mintAfterPayment(intent: StripeTypes.PaymentIntent): Promise<void> {
     const { eventId, userId, walletAddress, tier } = intent.metadata;
-
     try {
       await this.mintNftForUser(eventId, userId, walletAddress, tier);
     } catch (err) {
       this.logger.error(`Mint failed after payment ${intent.id}: ${err.message}`);
-      // In production: queue for retry, refund if unresolvable
     }
   }
 
@@ -140,26 +129,22 @@ export class PaymentService {
     const event = this.findEvent(eventId);
     if (!event) throw new NotFoundException(`Event ${eventId} not found`);
 
-    const tierNum = TIER_FROM_STRING[tier];
+    const tierNum  = TIER_FROM_STRING[tier];
     const imageCid = this.metadataService.getTierImageCid(tier);
-    const ipfsUri = await this.metadataService.pinMetadata(event, imageCid);
+    const ipfsUri  = await this.metadataService.pinMetadata(event, imageCid);
 
-    // Deadshot events (ICON) mint directly at that tier, no evolution path
+    // Deadshot events (LEGENDARY) skip the evolution path
     const isDeadshot = (event as any).isDeadshot === true;
     const txFn = isDeadshot
       ? this.chain.nftContract.mintAtTier(toAddress, event.playerId, ipfsUri, tierNum)
       : this.chain.nftContract.mintMoment(toAddress, event.playerId, ipfsUri, tierNum);
 
-    const tx = await txFn;
+    const tx      = await txFn;
     const receipt = await tx.wait();
-
-    // Parse tokenId from MomentMinted event
     const tokenId = this.parseMintEvent(receipt);
 
-    // Record ownership
     this.usersService.addTokenToUser(userId, tokenId);
 
-    // Notify frontend — shows the "Minted!" step in the buy flow
     this.eventsGateway.broadcastMint({
       tokenId,
       playerId: event.playerId,
@@ -168,10 +153,7 @@ export class PaymentService {
       txHash: receipt.hash,
     });
 
-    this.logger.log(
-      `Minted token #${tokenId} (${tier}) → ${toAddress} | tx: ${receipt.hash}`,
-    );
-
+    this.logger.log(`Minted token #${tokenId} (${tier}) → ${toAddress} | tx: ${receipt.hash}`);
     return { txHash: receipt.hash, tokenId, tier };
   }
 
@@ -180,16 +162,16 @@ export class PaymentService {
     return (mockData as any).matches
       .flatMap((m: any) => m.events)
       .map((e: any) => ({
-        eventId: e.eventId,
-        playerId: e.playerId,
-        playerName: e.playerName,
-        team: e.team,
-        stat: e.stat,
+        eventId:     e.eventId,
+        playerId:    e.playerId,
+        playerName:  e.playerName,
+        team:        e.team,
+        stat:        e.stat,
         matchContext: e.matchContext,
-        tier: e.rarityTrigger,
-        priceUsd: TIER_PRICES_USD[e.rarityTrigger] ?? 25,
-        isDeadshot: e.isDeadshot ?? false,
-        deadshot: e.deadshot ?? null,
+        tier:        e.rarityTrigger,
+        priceUsd:    TIER_PRICES_USD[e.rarityTrigger] ?? 25,
+        isDeadshot:  e.isDeadshot ?? false,
+        deadshot:    e.deadshot ?? null,
       }));
   }
 
@@ -208,6 +190,6 @@ export class PaymentService {
         if (parsed?.name === 'MomentMinted') return Number(parsed.args.tokenId);
       } catch (_) {}
     }
-    return Date.now(); // fallback for demo if event parsing fails
+    return Date.now(); // fallback for demo
   }
 }

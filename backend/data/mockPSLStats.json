@@ -20,7 +20,7 @@
           "fours": 5,
           "sixes": 3,
           "matchContext": "solid powerplay knock to set up the chase",
-          "rarityTrigger": "RARE"
+          "rarityTrigger": "UNCOMMON"
         },
         {
           "eventId": "EVT-002",
@@ -33,7 +33,7 @@
           "runsConceded": 18,
           "economy": 4.5,
           "matchContext": "strangled the middle order in overs 7-10",
-          "rarityTrigger": "RARE"
+          "rarityTrigger": "UNCOMMON"
         }
       ]
     },
@@ -56,7 +56,7 @@
           "fours": 6,
           "sixes": 5,
           "matchContext": "last-ball six to win the match",
-          "rarityTrigger": "EPIC"
+          "rarityTrigger": "RARE"
         },
         {
           "eventId": "EVT-004",
@@ -69,7 +69,7 @@
           "runsConceded": 22,
           "economy": 4.4,
           "matchContext": "first powerplay, dismantled top order",
-          "rarityTrigger": "LEGEND"
+          "rarityTrigger": "EPIC"
         }
       ]
     },
@@ -92,7 +92,7 @@
           "fours": 9,
           "sixes": 4,
           "matchContext": "chasing 187, match-winning innings",
-          "rarityTrigger": "EPIC"
+          "rarityTrigger": "RARE"
         }
       ]
     },
@@ -113,7 +113,7 @@
           "runsConceded": 0,
           "economy": 0.0,
           "matchContext": "hat-trick in the semi-final death overs, sealed the game",
-          "rarityTrigger": "LEGEND"
+          "rarityTrigger": "EPIC"
         }
       ]
     },
@@ -136,7 +136,7 @@
           "fours": 11,
           "sixes": 6,
           "matchContext": "PSL Final, match-winning century",
-          "rarityTrigger": "LEGEND"
+          "rarityTrigger": "EPIC"
         },
         {
           "eventId": "EVT-DEADSHOT-001",
@@ -151,7 +151,7 @@
           "fours": 0,
           "sixes": 6,
           "matchContext": "PSL Final, over 18 — six sixes off consecutive deliveries. Only 1 card exists.",
-          "rarityTrigger": "ICON",
+          "rarityTrigger": "LEGENDARY",
           "isDeadshot": true,
           "deadshot": {
             "globalSupplyCap": 1,
@@ -170,7 +170,7 @@
           "runsConceded": 4,
           "economy": 2.0,
           "matchContext": "PSL Final, figures of 6/4 — the most dominant final spell in PSL history",
-          "rarityTrigger": "ICON",
+          "rarityTrigger": "LEGENDARY",
           "isDeadshot": true,
           "deadshot": {
             "globalSupplyCap": 2,
@@ -205,10 +205,10 @@
     }
   ],
   "rarityThresholds": {
-    "COMMON":  { "minRuns": 0,   "minStrikeRate": 0,   "minWickets": 0, "supply": 10000 },
-    "RARE":    { "minRuns": 30,  "minStrikeRate": 120, "minWickets": 2, "supply": 1000  },
-    "EPIC":    { "minRuns": 50,  "minStrikeRate": 150, "minWickets": 3, "supply": 100   },
-    "LEGEND":  { "minRuns": 100, "minStrikeRate": 160, "minWickets": 5, "supply": 10    },
-    "ICON":    { "minRuns": 0,   "minStrikeRate": 0,   "minWickets": 0, "supply": 2, "note": "Deadshot — manually triggered only, mintAtTier()" }
+    "COMMON":    { "minRuns": 0,   "minStrikeRate": 0,   "minWickets": 0, "supply": 10000 },
+    "UNCOMMON":  { "minRuns": 30,  "minStrikeRate": 120, "minWickets": 2, "supply": 1000  },
+    "RARE":      { "minRuns": 50,  "minStrikeRate": 150, "minWickets": 3, "supply": 100   },
+    "EPIC":      { "minRuns": 100, "minStrikeRate": 160, "minWickets": 5, "supply": 10    },
+    "LEGENDARY": { "minRuns": 0,   "minStrikeRate": 0,   "minWickets": 0, "supply": 2, "note": "Deadshot — manually triggered only, mintAtTier()" }
   }
 }

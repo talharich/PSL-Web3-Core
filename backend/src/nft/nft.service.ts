@@ -47,7 +47,7 @@ export class NftService {
         await Promise.all([
           this.chain.nftContract.ownerOf(tokenId),
           this.chain.nftContract.tokenTier(tokenId),
-          this.chain.nftContract.playerId(tokenId),
+          this.chain.nftContract.tokenPlayer(tokenId),   // fixed: was playerId()
           this.chain.nftContract.tokenURI(tokenId),
           this.chain.nftContract.getTBAAddress(tokenId),
         ]);
@@ -55,11 +55,9 @@ export class NftService {
       const tierIndex = Number(tierRaw);
       const tier = TIER_NAMES[tierIndex] ?? 'COMMON';
 
-      // TBA wallet balance
       const tbaBalanceWei = await this.chain.provider.getBalance(tbaAddress);
       const tbaBalance = ethers.formatEther(tbaBalanceWei);
 
-      // Marketplace listing
       let listing = null;
       try {
         const l = await this.chain.marketplaceContract.listings(tokenId);
@@ -72,7 +70,6 @@ export class NftService {
         }
       } catch (_) {}
 
-      // Claimable yield
       let claimableYield = '0';
       try {
         const yieldWei = await this.chain.yieldContract.claimableByToken(tokenId);
@@ -101,14 +98,13 @@ export class NftService {
     let tokenIds: number[] = [];
 
     try {
-      const raw = await this.chain.nftContract.playerTokens(playerId);
+      const raw = await this.chain.nftContract.tokensOfPlayer(playerId);  // fixed: was playerTokens()
       tokenIds = raw.map(Number);
     } catch (err) {
       this.logger.warn(`No tokens found for player ${playerId}`);
       return { playerId, tokenIds: [], tokens: [] };
     }
 
-    // Fetch basic data for each token (no listing/yield — reduces RPC calls)
     const tokens = await Promise.all(
       tokenIds.map(async (id) => {
         try {
@@ -151,7 +147,7 @@ export class NftService {
         runs: Number(stats.runs),
         strikeRate: Number(stats.strikeRate),
         wickets: Number(stats.wickets),
-        tier: stats.tier,
+        tier: stats.rarityTier,   // fixed: field name matches OracleIntegration.sol struct
         lastUpdated: new Date(Number(stats.lastUpdated) * 1000).toISOString(),
       };
     } catch (err) {
@@ -161,7 +157,7 @@ export class NftService {
 
   // ── Supply data for all tiers ────────────────────────────────────────────
   async getSupplyData(): Promise<SupplyData[]> {
-    const tiers = [0, 1, 2, 3, 4]; // COMMON → ICON
+    const tiers = [0, 1, 2, 3, 4]; // COMMON → LEGENDARY
     const results: SupplyData[] = [];
 
     for (const tierIndex of tiers) {
@@ -182,7 +178,6 @@ export class NftService {
           percentFilled: maxNum > 0 ? Math.round((mintedNum / maxNum) * 100) : 0,
         });
       } catch (_) {
-        // Fallback to hardcoded max supply if contract call fails
         const tierName = TIER_NAMES[tierIndex];
         results.push({
           tier: tierName,
