@@ -1,4 +1,4 @@
-// ─── Pinata gateway prefix ───────────────────────────────────────────────────
+//─── Pinata gateway prefix ───────────────────────────────────────────────────
 const IPFS = 'https://gateway.pinata.cloud/ipfs/';
 
 // ─── KEEP THESE — other components import them ────────────────────────────────
