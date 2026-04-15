@@ -1,0 +1,15 @@
+{
+  "name": "Shaheen Breaks Through — Warner Dismissed — PSL 11 Match 06",
+  "description": "Shaheen Shah Afridi provides the breakthrough for Lahore Qalandars, dismissing the dangerous David Warner in a high-voltage El Clasico between Karachi Kings and Lahore Qalandars.",
+  "animation_url": "bafybeiddhxh2ohri763ei6sltwwxdnk7xtz4sqv5isfxgrll5uli5x5wfa",
+  "attributes": [
+    { "trait_type": "Tournament",   "value": "PSL 11" },
+    { "trait_type": "Match",        "value": "Match 06" },
+    { "trait_type": "Fixture",      "value": "Karachi Kings vs Lahore Qalandars" },
+    { "trait_type": "Player",       "value": "Shaheen Shah Afridi" },
+    { "trait_type": "Player ID",    "value": "shaheen_afridi" },
+    { "trait_type": "Moment Type",  "value": "Wicket" },
+    { "trait_type": "Batter",       "value": "David Warner" },
+    { "trait_type": "Tier",         "value": "COMMON" }
+  ]
+}

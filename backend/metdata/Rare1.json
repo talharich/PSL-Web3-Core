@@ -1,0 +1,16 @@
+{
+  "name": "Mir Hamza's Bullet Catch — PSL 11 Match 06",
+  "description": "A once-in-a-generation moment. Mir Hamza pulls off a spectacular catch as a fast bowler, grabbing a bullet-paced drive hit directly back at him. A moment very rarely seen in cricket.",
+
+  "animation_url": "bafybeibe7q4vus5e5t3lyjyermbtquzpvmkbddskcmdxvsuqkurzkvjzfa",
+  "attributes": [
+    { "trait_type": "Tournament",   "value": "PSL 11" },
+    { "trait_type": "Match",        "value": "Match 06" },
+    { "trait_type": "Fixture",      "value": "Karachi Kings vs Lahore Qalandars" },
+    { "trait_type": "Player",       "value": "Mir Hamza" },
+    { "trait_type": "Player ID",    "value": "mir_hamza" },
+    { "trait_type": "Moment Type",  "value": "Catch" },
+    { "trait_type": "Rarity Note",  "value": "Fast bowler catch off own bowling" },
+    { "trait_type": "Tier",         "value": "RARE" }
+  ]
+}
