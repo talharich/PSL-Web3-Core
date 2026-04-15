@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { OracleService } from './oracle.service';
 import { AdminGuard } from '../auth/admin.guard';
+import { PaymentService } from '../payment/payment.service';
 
 class MintAtTierDto {
   toAddress: string;
@@ -32,11 +33,12 @@ class ScoreDto {
 
 @Controller('oracle')
 export class OracleController {
-  constructor(private readonly oracleService: OracleService) {}
+  constructor(
+    private readonly oracleService: OracleService,
+    private readonly paymentService: PaymentService,
+  ) {}
 
-  // ── Demo trigger — this is the button in the admin panel ─────────────────
-  // POST /oracle/trigger/EVT-DEMO
-  // Header: x-admin-key: your_secret
+  // POST /oracle/trigger/:eventId
   @Post('trigger/:eventId')
   @UseGuards(AdminGuard)
   @HttpCode(200)
@@ -44,8 +46,7 @@ export class OracleController {
     return this.oracleService.triggerUpgrade(eventId);
   }
 
-  // ── Deadshot mint — mint directly at LEGEND or ICON tier ────────────────
-  // For 6 sixes in an over, hat-tricks in finals, etc.
+  // POST /oracle/mint-at-tier
   @Post('mint-at-tier')
   @UseGuards(AdminGuard)
   async mintAtTier(@Body() dto: MintAtTierDto) {
@@ -57,7 +58,7 @@ export class OracleController {
     );
   }
 
-  // ── Register a token with the oracle after minting ───────────────────────
+  // POST /oracle/register-token
   @Post('register-token')
   @UseGuards(AdminGuard)
   async registerToken(@Body() dto: RegisterTokenDto) {
@@ -65,42 +66,27 @@ export class OracleController {
     return { txHash };
   }
 
-  // ── Score calculator endpoint (no chain call, pure math) ─────────────────
+  // POST /oracle/score/calculate
   @Post('score/calculate')
   calculateScore(@Body() dto: ScoreDto) {
     return this.oracleService.calculateScore(dto);
   }
 
-  // ── List all mock events available to trigger ────────────────────────────
+  // GET /oracle/events/list — returns all moments in the catalog
   @Get('events/list')
   listEvents() {
     return this.oracleService.listMockEvents();
   }
 
-  // ── Milestone points table ───────────────────────────────────────────────
+  // GET /oracle/milestones
   @Get('milestones')
   getMilestones() {
     return this.oracleService.getMilestonePoints();
   }
 
-  // purchasable nfts for the marketplace
+  // GET /oracle/moments/buyable — delegates to payment service (single source of truth)
   @Get('moments/buyable')
   getBuyableMoments() {
-    return this.oracleService.listMockEvents().map(e => ({
-      eventId: e.eventId,
-      playerId: e.playerId,
-      playerName: e.playerName,
-      team: e.team,
-      stat: e.stat,
-      matchContext: e.matchContext,
-      tier: e.rarityTrigger,
-      isDeadshot: (e as any).isDeadshot ?? false,
-      price: this.getPriceForTier(e.rarityTrigger),
-    }));
-  }
-
-  private getPriceForTier(tier: string): number {
-    const prices = { COMMON: 25, RARE: 150, EPIC: 800, LEGEND: 3500, ICON: 15000 };
-    return prices[tier] ?? 25;
+    return this.paymentService.getBuyableMoments();
   }
 }

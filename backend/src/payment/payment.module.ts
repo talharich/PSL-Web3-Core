@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common';
 import { PaymentController } from './payment.controller';
 import { PaymentService } from './payment.service';
-import { ChainProvider } from '../common/chain.provider';
-import { MetadataService } from '../metadata/metadata.service';
-import { EventsGateway } from '../events/events.gateway';
+import { MetadataModule } from '../metadata/metadata.module';
+import { EventsModule } from '../events/events.module';
 import { UsersModule } from '../users/users.module';
 
 @Module({
-  imports: [UsersModule],
-  controllers: [PaymentController],   // ← must be here
-  providers: [PaymentService, ChainProvider, MetadataService, EventsGateway],
+  imports: [MetadataModule, EventsModule, UsersModule],
+  controllers: [PaymentController],
+  providers: [PaymentService],
+  exports: [PaymentService],
 })
 export class PaymentModule {}

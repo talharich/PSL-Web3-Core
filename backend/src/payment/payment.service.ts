@@ -8,13 +8,13 @@ import { ConfigService } from '@nestjs/config';
 import Stripe = require('stripe');
 import type { Stripe as StripeTypes } from 'stripe/cjs/stripe.core';
 import { ChainProvider } from '../common/chain.provider';
-import { MetadataService } from '../metadata/metadata.service';
+import { MetadataService, CricketEvent } from '../metadata/metadata.service';
 import { EventsGateway } from '../events/events.gateway';
 import { UsersService } from '../users/users.service';
 import { TIER_FROM_STRING } from '../common/abi/contracts';
-import * as mockData from '../../data/mockPSLStats.json';
+import * as momentsData from '../../data/moments.json';
 
-// USD price per tier — Deadshot.io rarity scheme
+// USD price per tier (also stored in moments.json rarityThresholds)
 export const TIER_PRICES_USD: Record<string, number> = {
   COMMON:    25,
   UNCOMMON:  150,
@@ -22,6 +22,9 @@ export const TIER_PRICES_USD: Record<string, number> = {
   EPIC:      3500,
   LEGENDARY: 15000,
 };
+
+// All moments from the catalog
+const ALL_MOMENTS: CricketEvent[] = (momentsData as any).moments as CricketEvent[];
 
 @Injectable()
 export class PaymentService {
@@ -47,7 +50,7 @@ export class PaymentService {
     userId: string,
   ): Promise<{ clientSecret: string; amount: number; currency: string }> {
     const event = this.findEvent(eventId);
-    if (!event) throw new NotFoundException(`Event ${eventId} not found`);
+    if (!event) throw new NotFoundException(`Moment ${eventId} not found`);
 
     const user = this.usersService.findById(userId);
     if (!user) throw new NotFoundException('User not found');
@@ -79,7 +82,7 @@ export class PaymentService {
     };
   }
 
-  // ── Step 2: Stripe webhook — payment confirmed, mint the NFT ────────────
+  // ── Step 2: Stripe webhook ────────────────────────────────────────────────
   async handleWebhook(rawBody: Buffer, signature: string): Promise<void> {
     const webhookSecret = this.config.get<string>('stripe.webhookSecret');
     let stripeEvent: StripeTypes.Event;
@@ -96,13 +99,13 @@ export class PaymentService {
     }
   }
 
-  // ── Step 2 (demo only): Confirm payment without real Stripe ─────────────
+  // ── Demo confirm: skip Stripe, mint immediately ──────────────────────────
   async confirmDemoPayment(
     eventId: string,
     userId: string,
-  ): Promise<{ txHash: string; tokenId: number; tier: string }> {
+  ): Promise<{ txHash: string; tokenId: number; tier: string; animationUrl: string; thumbnailUrl: string }> {
     const event = this.findEvent(eventId);
-    if (!event) throw new NotFoundException(`Event ${eventId} not found`);
+    if (!event) throw new NotFoundException(`Moment ${eventId} not found`);
 
     const user = this.usersService.findById(userId);
     if (!user) throw new NotFoundException('User not found');
@@ -110,7 +113,7 @@ export class PaymentService {
     return this.mintNftForUser(eventId, userId, user.walletAddress, event.rarityTrigger);
   }
 
-  // ── Internal: actually mint the NFT after payment ────────────────────────
+  // ── Internal mint after payment ──────────────────────────────────────────
   private async mintAfterPayment(intent: StripeTypes.PaymentIntent): Promise<void> {
     const { eventId, userId, walletAddress, tier } = intent.metadata;
     try {
@@ -125,17 +128,18 @@ export class PaymentService {
     userId: string,
     toAddress: string,
     tier: string,
-  ): Promise<{ txHash: string; tokenId: number; tier: string }> {
+  ): Promise<{ txHash: string; tokenId: number; tier: string; animationUrl: string; thumbnailUrl: string }> {
     const event = this.findEvent(eventId);
-    if (!event) throw new NotFoundException(`Event ${eventId} not found`);
+    if (!event) throw new NotFoundException(`Moment ${eventId} not found`);
 
-    const tierNum  = TIER_FROM_STRING[tier];
-    const imageCid = this.metadataService.getTierImageCid(tier);
-    const ipfsUri  = await this.metadataService.pinMetadata(event, imageCid);
+    const tierNum = TIER_FROM_STRING[tier];
 
-    // Deadshot events (LEGENDARY) skip the evolution path
-    const isDeadshot = (event as any).isDeadshot === true;
-    const txFn = isDeadshot
+    // Pin just the metadata JSON — video & thumbnail CIDs already on Pinata
+    const ipfsUri = await this.metadataService.pinMetadata(event);
+
+    // Use mintAtTier for LEGENDARY or mintMoment for others
+    const isHighTier = tier === 'LEGENDARY' || tier === 'EPIC';
+    const txFn = isHighTier
       ? this.chain.nftContract.mintAtTier(toAddress, event.playerId, ipfsUri, tierNum)
       : this.chain.nftContract.mintMoment(toAddress, event.playerId, ipfsUri, tierNum);
 
@@ -154,32 +158,40 @@ export class PaymentService {
     });
 
     this.logger.log(`Minted token #${tokenId} (${tier}) → ${toAddress} | tx: ${receipt.hash}`);
-    return { txHash: receipt.hash, tokenId, tier };
+
+    return {
+      txHash:        receipt.hash,
+      tokenId,
+      tier,
+      animationUrl:  `https://gateway.pinata.cloud/ipfs/${event.animation_url ?? ''}`,
+      thumbnailUrl:  `https://gateway.pinata.cloud/ipfs/${event.thumbnail ?? ''}`,
+    };
   }
 
   // ── Buyable moments list ──────────────────────────────────────────────────
   getBuyableMoments() {
-    return (mockData as any).matches
-      .flatMap((m: any) => m.events)
-      .map((e: any) => ({
-        eventId:     e.eventId,
-        playerId:    e.playerId,
-        playerName:  e.playerName,
-        team:        e.team,
-        stat:        e.stat,
-        matchContext: e.matchContext,
-        tier:        e.rarityTrigger,
-        priceUsd:    TIER_PRICES_USD[e.rarityTrigger] ?? 25,
-        isDeadshot:  e.isDeadshot ?? false,
-        deadshot:    e.deadshot ?? null,
-      }));
+    return ALL_MOMENTS.map((e) => ({
+      eventId:      e.eventId,
+      playerId:     e.playerId,
+      playerName:   e.playerName,
+      team:         e.team,
+      stat:         e.stat,
+      momentType:   e.momentType ?? e.stat.replace(/_/g, ' '),
+      matchContext: e.matchContext,
+      tier:         e.rarityTrigger,
+      priceUsd:     TIER_PRICES_USD[e.rarityTrigger] ?? 25,
+      name:         e.name ?? `${e.playerName} — ${e.stat}`,
+      description:  e.description ?? e.matchContext,
+      isDeadshot:   e.isDeadshot ?? false,
+      // Full Pinata gateway URLs for the frontend
+      animationUrl: `https://gateway.pinata.cloud/ipfs/${e.animation_url ?? ''}`,
+      thumbnailUrl: `https://gateway.pinata.cloud/ipfs/${e.thumbnail ?? ''}`,
+    }));
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
-  private findEvent(eventId: string): any {
-    return (mockData as any).matches
-      .flatMap((m: any) => m.events)
-      .find((e: any) => e.eventId === eventId);
+  private findEvent(eventId: string): CricketEvent | undefined {
+    return ALL_MOMENTS.find((e) => e.eventId === eventId);
   }
 
   private parseMintEvent(receipt: any): number {
@@ -190,6 +202,7 @@ export class PaymentService {
         if (parsed?.name === 'MomentMinted') return Number(parsed.args.tokenId);
       } catch (_) {}
     }
-    return Date.now(); // fallback for demo
+    // Demo fallback
+    return Date.now() % 100000;
   }
 }

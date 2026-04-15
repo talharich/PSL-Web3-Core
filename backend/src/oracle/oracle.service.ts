@@ -3,20 +3,26 @@ import { ChainProvider } from '../common/chain.provider';
 import { MetadataService, CricketEvent } from '../metadata/metadata.service';
 import { EventsGateway } from '../events/events.gateway';
 import { TIER_FROM_STRING, TIER_NAMES } from '../common/abi/contracts';
-import * as mockData from '../../data/mockPSLStats.json';
+import * as momentsData from '../../data/moments.json';
 
 // ─── Score calculator ─────────────────────────────────────────────────────────
 
 const MILESTONE_POINTS: Record<string, number> = {
-  century:          80,
-  half_century:     30,
-  five_wicket_haul: 90,
-  hat_trick:        100,
-  six_sixes:        200,   // Deadshot LEGENDARY — instant max
-  perfect_spell:    200,   // Deadshot LEGENDARY
-  player_of_match:  40,
-  psl_title:        150,
-  national_squad:   50,
+  half_century:       30,
+  catch:              40,
+  wicket:             25,
+  three_wicket_burst: 60,
+  four_wicket_spell:  75,
+  four_wicket_blitz:  90,
+  match_winning_knock:70,
+  five_wicket_haul:   90,
+  hat_trick:          100,
+  six_sixes:          200,
+  perfect_spell:      200,
+  century:            80,
+  player_of_match:    40,
+  psl_title:          150,
+  national_squad:     50,
 };
 
 interface PlayerData {
@@ -24,7 +30,7 @@ interface PlayerData {
   milestones: { type: string; points: number }[];
   tradeVolume: number;
   maxTradeVolume: number;
-  mintRarity: number; // 0–100
+  mintRarity: number;
 }
 
 export function calculatePerformanceScore(player: PlayerData): {
@@ -54,7 +60,6 @@ export function calculatePerformanceScore(player: PlayerData): {
   };
 }
 
-// Deadshot.io rarity scheme thresholds
 function getTierFromScore(score: number): string {
   if (score >= 900) return 'LEGENDARY';
   if (score >= 700) return 'EPIC';
@@ -75,7 +80,7 @@ export class OracleService {
     private readonly eventsGateway: EventsGateway,
   ) {}
 
-  // ── Main trigger: called by controller or admin panel ──────────────────────
+  // ── Main trigger ─────────────────────────────────────────────────────────────
   async triggerUpgrade(eventId: string): Promise<{
     txHash: string;
     newTier: string;
@@ -87,8 +92,8 @@ export class OracleService {
 
     this.logger.log(`Triggering upgrade: ${event.playerName} — ${event.stat} → ${event.rarityTrigger}`);
 
-    const imageCid = this.metadataService.getTierImageCid(event.rarityTrigger);
-    const ipfsUri  = await this.metadataService.pinMetadata(event, imageCid);
+    // Pin just the metadata JSON; media CIDs are already on Pinata
+    const ipfsUri = await this.metadataService.pinMetadata(event);
 
     const tx = await this.chain.oracleContract.updatePlayerStats(
       event.playerId,
@@ -99,7 +104,6 @@ export class OracleService {
       ipfsUri,
     );
     const receipt = await tx.wait();
-
     const upgradedTokenIds = this.parseUpgradeEvents(receipt);
 
     let oldTier = 'COMMON';
@@ -110,7 +114,7 @@ export class OracleService {
       } catch (_) {}
     }
 
-    const metadata = this.metadataService.buildMetadata(event, imageCid);
+    const metadata = this.metadataService.buildMetadata(event);
     this.eventsGateway.broadcastUpgrade({
       eventId,
       playerId: event.playerId,
@@ -126,7 +130,7 @@ export class OracleService {
     return { txHash: receipt.hash, newTier: event.rarityTrigger, tokenIds: upgradedTokenIds, ipfsUri };
   }
 
-  // ── Deadshot mint: LEGENDARY minted directly, no evolution path ───────────
+  // ── Deadshot mint ─────────────────────────────────────────────────────────────
   async mintAtTier(
     toAddress: string,
     playerId: string,
@@ -139,14 +143,12 @@ export class OracleService {
     const tierNum = TIER_FROM_STRING[tier];
     if (tierNum === undefined) throw new Error(`Unknown tier: ${tier}`);
 
-    const imageCid = this.metadataService.getTierImageCid(tier);
-    const ipfsUri  = await this.metadataService.pinMetadata(event, imageCid);
+    const ipfsUri = await this.metadataService.pinMetadata(event);
 
     this.logger.log(`Minting ${tier} directly for ${playerId} → ${toAddress}`);
 
     const tx = await this.chain.nftContract.mintAtTier(toAddress, playerId, ipfsUri, tierNum);
     const receipt = await tx.wait();
-
     const tokenId = this.parseMintEvent(receipt);
 
     this.eventsGateway.broadcastMint({
@@ -160,7 +162,6 @@ export class OracleService {
     return { txHash: receipt.hash, tokenId };
   }
 
-  // ── Register a player token so oracle knows what to upgrade ──────────────
   async registerToken(playerId: string, tokenId: number): Promise<string> {
     const tx = await this.chain.oracleContract.registerPlayerToken(playerId, tokenId);
     const receipt = await tx.wait();
@@ -175,16 +176,17 @@ export class OracleService {
     return MILESTONE_POINTS;
   }
 
+  /** Returns all moments from the catalog */
   listMockEvents(): CricketEvent[] {
-    return (mockData as any).matches.flatMap((m: any) => m.events);
+    return (momentsData as any).moments as CricketEvent[];
   }
 
-  // ─── Private helpers ──────────────────────────────────────────────────────
+  // ─── Private helpers ──────────────────────────────────────────────────────────
 
   private findEvent(eventId: string): CricketEvent | undefined {
-    return (mockData as any).matches
-      .flatMap((m: any) => m.events)
-      .find((e: any) => e.eventId === eventId);
+    return ((momentsData as any).moments as CricketEvent[]).find(
+      (e) => e.eventId === eventId,
+    );
   }
 
   private parseUpgradeEvents(receipt: any): number[] {

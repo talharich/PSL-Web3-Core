@@ -30,10 +30,10 @@ export class MetadataController {
   }
 
   // Fetch player stats from CricAPI
-  @Get('player/:cricapiId/stats')
-  async getPlayerStats(@Param('cricapiId') cricapiId: string) {
-    return this.metadataService.fetchPlayerStats(cricapiId);
-  }
+  // @Get('player/:cricapiId/stats')
+  // async getPlayerStats(@Param('cricapiId') cricapiId: string) {
+  //   return this.metadataService.fetchPlayerStats(cricapiId);
+  // }
 
   // Fetch match scorecard
   @Get('match/:matchId/scorecard')
