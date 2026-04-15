@@ -156,6 +156,9 @@ export const oracle = {
 // ─── PAYMENT ─────────────────────────────────────────────────────────────────
 
 export const payment = {
+  /** GET /payment/moments — buyable moments list */
+  moments: () => get('/payment/moments'),
+
   demoConfirm: (eventId) =>
     fetch('/api/payment/demo-confirm', {
       method: 'POST',

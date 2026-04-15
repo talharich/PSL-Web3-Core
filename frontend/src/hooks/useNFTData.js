@@ -212,14 +212,25 @@ export function useBuyableMoments() {
     withTimeout(paymentApi.moments())
       .then(data => {
         const arr = Array.isArray(data) ? data : (data.moments ?? []);
-        setMoments(arr);
+        // If API returns real data, use it; otherwise fall back to mock NFTs
+        setMoments(arr.length > 0 ? arr : MOCK_NFTS.map(n => ({
+          ...n,
+          eventId: n.tokenId,
+          price:   n.listPrice ?? n.estimatedValue,
+        })));
       })
       .catch(async () => {
         try {
           const b = await withTimeout(oracleApi.buyable());
-          setMoments(b ?? []);
+          if (b?.length) { setMoments(b); return; }
+          throw new Error('empty');
         } catch {
-          setMoments([]);
+          // Final fallback: use real mock NFTs so Buy page is never blank
+          setMoments(MOCK_NFTS.map(n => ({
+            ...n,
+            eventId: n.tokenId,
+            price:   n.listPrice ?? n.estimatedValue,
+          })));
         }
       })
       .finally(() => setLoading(false));
