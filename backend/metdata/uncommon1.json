@@ -1,0 +1,15 @@
+{
+  "name": "Kusal Perera's Gritty Half-Century — PSL 11 Match 15",
+  "description": "On a treacherous pitch where most batters couldn't reach double figures, Kusal Perera stood firm at one end and completed his half-century in style. A masterclass in temperament and skill.",
+  "animation_url": "bafybeigynln3s2nswbgakl2gyijhzjyfgg3tixa27exikhce2qq62urldy",
+  "attributes": [
+    { "trait_type": "Tournament",   "value": "PSL 11" },
+    { "trait_type": "Match",        "value": "Match 15" },
+    { "trait_type": "Fixture",      "value": "Peshawar Zalmi vs Hyderabad Kingsmen" },
+    { "trait_type": "Player",       "value": "Kusal Perera" },
+    { "trait_type": "Player ID",    "value": "kusal_perera" },
+    { "trait_type": "Moment Type",  "value": "Half Century" },
+    { "trait_type": "Milestone",    "value": "50+" },
+    { "trait_type": "Tier",         "value": "UNCOMMON" }
+  ]
+}

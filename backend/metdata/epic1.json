@@ -1,0 +1,17 @@
+
+{
+  "name": "Iftikhar Seals It — Last Over Heroics — PSL 11 Match 15",
+  "description": "Iftikhar Ahmad leads Peshawar Zalmi to victory with a brilliant last-over knock, sealing the win with a four and a six. A captain's innings when it mattered most.",
+  "animation_url": "bafybeicze23w2eot7rcfwist7c62a5akmset36vxsa3gdqaotyvd75bwyu",
+  "attributes": [
+    { "trait_type": "Tournament",   "value": "PSL 11" },
+    { "trait_type": "Match",        "value": "Match 15" },
+    { "trait_type": "Fixture",      "value": "Peshawar Zalmi vs Hyderabad Kingsmen" },
+    { "trait_type": "Player",       "value": "Iftikhar Ahmad" },
+    { "trait_type": "Player ID",    "value": "iftikhar_ahmad" },
+    { "trait_type": "Moment Type",  "value": "Match Winning Knock" },
+    { "trait_type": "Shots",        "value": "Four + Six" },
+    { "trait_type": "Over",         "value": "Last Over" },
+    { "trait_type": "Tier",         "value": "EPIC" }
+  ]
+}

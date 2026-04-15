@@ -1,0 +1,16 @@
+{
+  "name": "Iftikhar's Four-Wicket Blitz — PSL 11 Match 15",
+  "description": "The fifth over of the first innings and Iftikhar Ahmad, a part-time bowler, has taken his 4th wicket — his 3rd in the over — as Hyderabad Kingsmen collapse to lose their fourth wicket. A legendary bowling display from an unlikely hero.",
+  "animation_url": "bafybeid6socjnqoh27cs3yzpdoio3a5wcznruem4fq6amqmhapa6kmawwy",
+  "attributes": [
+    { "trait_type": "Tournament",   "value": "PSL 11" },
+    { "trait_type": "Match",        "value": "Match 15" },
+    { "trait_type": "Fixture",      "value": "Peshawar Zalmi vs Hyderabad Kingsmen" },
+    { "trait_type": "Player",       "value": "Iftikhar Ahmad" },
+    { "trait_type": "Player ID",    "value": "iftikhar_ahmad" },
+    { "trait_type": "Moment Type",  "value": "Wicket" },
+    { "trait_type": "Wickets",      "value": 4 },
+    { "trait_type": "Over",         "value": 5 },
+    { "trait_type": "Tier",         "value": "LEGENDARY" }
+  ]
+}
