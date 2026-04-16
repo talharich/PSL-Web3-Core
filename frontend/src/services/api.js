@@ -1,0 +1,208 @@
+/**
+ * Dynamic Fantasy Moments — Backend API Client
+ * Maps to NestJS controllers:
+ *   auth_controller.ts      → /api/auth
+ *   nft_controller.ts       → /api/nft
+ *   marketplace_controller  → /api/marketplace
+ *   oracle_controller       → /api/oracle
+ *   payment_controller      → /api/payment
+ *   metadata_controller     → /api/metadata
+ */
+
+// Use VITE_API_URL if set, otherwise default to localhost dev server
+// The vite proxy in vite.config.js will handle /api requests
+const BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+if (!import.meta.env.VITE_API_URL) {
+  console.log('[api] VITE_API_URL not set, using default: http://localhost:3001/api');
+}
+
+// ─── Token store ─────────────────────────────────────────────────────────────
+let _token = localStorage.getItem('dfm_token') || null;
+console.log(`[api] Initialized with token:`, _token ? `${_token.substring(0, 20)}...` : 'NONE');
+
+export function setToken(t) {
+  _token = t;
+  if (t) {
+    localStorage.setItem('dfm_token', t);
+    console.log(`[api] Token set:`, t.substring(0, 20) + '...');
+  } else {
+    localStorage.removeItem('dfm_token');
+    console.log(`[api] Token cleared`);
+  }
+}
+
+export function getToken() { return _token; }
+export function isLoggedIn() { 
+  const loggedIn = Boolean(_token);
+  console.log(`[api] isLoggedIn() →`, loggedIn);
+  return loggedIn;
+}
+
+// ─── Core fetch ──────────────────────────────────────────────────────────────
+async function req(method, path, body, auth = false) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (auth && _token) {
+    headers['Authorization'] = `Bearer ${_token}`;
+    console.log(`[api] Sending request with auth token to ${method} ${path}`);
+  } else if (auth && !_token) {
+    console.warn(`[api] ⚠️ Auth requested for ${method} ${path} but no token available!`);
+  }
+
+  const res = await fetch(`${BASE}${path}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: res.statusText }));
+    console.error(`[api] Error ${res.status} on ${method} ${path}:`, err);
+    throw new Error(err.message || `HTTP ${res.status}`);
+  }
+
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+const get  = (path, auth = false)       => req('GET',  path, undefined, auth);
+const post = (path, body, auth = false) => req('POST', path, body,      auth);
+
+// ─── AUTH ─────────────────────────────────────────────────────────────────────
+export const auth = {
+  // STEP 1: Request OTP (Signup start)
+  signup: (email, password, displayName) =>
+    post('/auth/signup/request-otp', { email, password, displayName }),
+
+  // STEP 2: Verify OTP (Create account)
+  verifyOtp: (email, otp, password, displayName) =>
+    post('/auth/signup/verify-otp', { email, otp, password, displayName }),
+
+  // Resend OTP
+  resendOtp: (email) =>
+    post('/auth/signup/resend-otp', { email }),
+
+  // Login
+  login: (email, password) =>
+    post('/auth/login', { email, password }),
+
+  // Get logged-in user
+  me: () => get('/auth/me', true),
+};
+
+// ─── NFT ──────────────────────────────────────────────────────────────────────
+export const nft = {
+  /** GET /nft/supply → tier caps + remaining */
+  supply: () => get('/nft/supply'),
+
+  /** GET /nft/total → { total } */
+  total: () => get('/nft/total'),
+
+  /** GET /nft/leaderboard?limit=N */
+  leaderboard: (limit = 10) => get(`/nft/leaderboard?limit=${limit}`),
+
+  /** GET /nft/:tokenId */
+  token: (tokenId) => get(`/nft/${tokenId}`),
+
+  /** GET /nft/player/:playerId/tokens */
+  playerTokens: (playerId) => get(`/nft/player/${playerId}/tokens`),
+
+  /** GET /nft/player/:playerId/stats */
+  playerStats: (playerId) => get(`/nft/player/${playerId}/stats`),
+
+  /** GET /nft/player/:playerId/portfolio */
+  portfolio: (playerId) => get(`/nft/player/${playerId}/portfolio`),
+};
+
+// ─── MARKETPLACE ──────────────────────────────────────────────────────────────
+export const marketplace = {
+  /** GET /marketplace/listings?player= */
+  listings: (player) =>
+    get(player ? `/marketplace/listings?player=${encodeURIComponent(player)}` : '/marketplace/listings'),
+
+  /** GET /marketplace/listings/:tokenId */
+  listing: (tokenId) => get(`/marketplace/listings/${tokenId}`),
+
+  /** GET /marketplace/history */
+  allHistory: () => get('/marketplace/history'),
+
+  /** GET /marketplace/history/:tokenId */
+  tokenHistory: (tokenId) => get(`/marketplace/history/${tokenId}`),
+
+  /** GET /marketplace/stats */
+  stats: () => get('/marketplace/stats'),
+
+  /** GET /marketplace/yield/:tokenId */
+  yield: (tokenId) => get(`/marketplace/yield/${tokenId}`),
+
+  /**
+   * GET /marketplace/yield/accumulated
+   * NOTE: In NestJS, static routes take precedence over parameterised ones,
+   * so /yield/accumulated resolves correctly before /yield/:tokenId.
+   */
+  totalYield: () => get('/marketplace/yield/accumulated'),
+};
+
+// ─── ORACLE ──────────────────────────────────────────────────────────────────
+export const oracle = {
+  /** POST /oracle/trigger/:eventId  (admin) */
+  trigger: (eventId) => post(`/oracle/trigger/${eventId}`, {}, true),
+
+  /** POST /oracle/mint-at-tier  (admin) */
+  mintAtTier: (toAddress, playerId, tier, eventId) =>
+    post('/oracle/mint-at-tier', { toAddress, playerId, tier, eventId }, true),
+
+  /** POST /oracle/register-token  (admin) */
+  registerToken: (playerId, tokenId) =>
+    post('/oracle/register-token', { playerId, tokenId }, true),
+
+  /** POST /oracle/score/calculate */
+  calculateScore: (data) => post('/oracle/score/calculate', data),
+
+  /** GET /oracle/events/list */
+  events: () => get('/oracle/events/list'),
+
+  /** GET /oracle/milestones */
+  milestones: () => get('/oracle/milestones'),
+
+  /** GET /oracle/moments/buyable */
+  buyable: () => get('/oracle/moments/buyable'),
+};
+
+// ─── PAYMENT ─────────────────────────────────────────────────────────────────
+export const payment = {
+  /** GET /payment/moments — buyable moments list */
+  moments: () => get('/payment/moments'),
+
+  /**
+   * POST /payment/intent — creates a Stripe PaymentIntent.
+   * Frontend uses the returned clientSecret with Stripe.js to complete payment.
+   */
+  createIntent: (eventId) => post('/payment/intent', { eventId }, true),
+
+  /**
+   * POST /payment/demo-confirm
+   * Uses the shared post() helper with auth=true, which correctly reads _token
+   * (seeded from 'dfm_token') and prepends BASE from VITE_API_URL.
+   */
+  demoConfirm: (eventId) => post('/payment/demo-confirm', { eventId }, true),
+};
+
+// ─── METADATA ────────────────────────────────────────────────────────────────
+export const metadata = {
+  /** POST /metadata/preview  (admin) */
+  preview: (event) => post('/metadata/preview', event, true),
+
+  /** POST /metadata/pin  (admin) */
+  pin: (event) => post('/metadata/pin', event, true),
+
+  /** GET /metadata/matches/live */
+  liveMatches: () => get('/metadata/matches/live'),
+
+  /** GET /metadata/player/:cricapiId/stats */
+  playerStats: (cricapiId) => get(`/metadata/player/${cricapiId}/stats`),
+
+  /** GET /metadata/match/:matchId/scorecard */
+  scorecard: (matchId) => get(`/metadata/match/${matchId}/scorecard`),
+};
+
+export default { auth, nft, marketplace, oracle, payment, metadata };

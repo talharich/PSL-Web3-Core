@@ -1,0 +1,16 @@
+{
+  "name": "Sufyan Muqeem's National Team Statement — PSL 11 Match 15",
+  "description": "Sufyan Muqeem takes his 3rd wicket of the over, sending a loud and clear message to the national selectors. A spell that announced his arrival on the big stage.",
+  "animation_url": "bafybeigwzyof3mgg27hqyseflza22gc6qvzgonigh6sajf2urwlvswxrr4",
+    "thumbnail":"bafkreiapw2ycxvkuxtieglbr276jk3zcexsyda3nlsxfvz7p2unrklhlga",
+  "attributes": [
+    { "trait_type": "Tournament",   "value": "PSL 11" },
+    { "trait_type": "Match",        "value": "Match 15" },
+    { "trait_type": "Fixture",      "value": "Peshawar Zalmi vs Hyderabad Kingsmen" },
+    { "trait_type": "Player",       "value": "Sufyan Muqeem" },
+    { "trait_type": "Player ID",    "value": "sufyan_muqeem" },
+    { "trait_type": "Moment Type",  "value": "Wicket" },
+    { "trait_type": "Wickets",      "value": 3 },
+    { "trait_type": "Tier",         "value": "UNCOMMON" }
+  ]
+}
