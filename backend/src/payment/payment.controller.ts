@@ -10,14 +10,17 @@ import {
   Request,
   HttpCode,
 } from '@nestjs/common';
+import { IsString } from 'class-validator';
 import { PaymentService } from './payment.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 class CreateIntentDto {
+  @IsString()
   eventId: string;
 }
 
 class DemoConfirmDto {
+  @IsString()
   eventId: string;
 }
 

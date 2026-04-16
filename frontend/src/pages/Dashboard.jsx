@@ -50,7 +50,7 @@ export default function Dashboard() {
     { label: 'Portfolio Value', value: `$${totalValue.toLocaleString()}`, color: 'text-green-400', glow: 'rgba(34,197,94,0.25)', icon: Wallet },
     { label: 'Moments',         value: portfolio?.tokenCount ?? nfts.length, color: 'text-white', glow: 'rgba(255,255,255,0.08)', icon: Award },
     { label: 'Top Tier',        value: highestTier || '—', color: 'text-amber-400', glow: 'rgba(245,158,11,0.25)', icon: TrendingUp },
-    { label: 'Yield Earned',    value: yieldData ? `${yieldData.totalAccumulatedEth} ETH` : '0.042 ETH', color: 'text-green-300', glow: 'rgba(34,197,94,0.2)', icon: RefreshCw },
+    { label: 'Yield Earned',    value: yieldData ? `${yieldData.totalAccumulatedEth ?? yieldData.accumulated ?? '0'} ETH` : '— ETH', color: 'text-green-300', glow: 'rgba(34,197,94,0.2)', icon: RefreshCw },
   ];
 
   return (

@@ -4,17 +4,26 @@ import { payment as paymentApi } from '../services/api';
 import { TIER_CONFIG } from '../data/mockData';
 
 export default function BuyModal({ moment, onClose, onSuccess }) {
-  const [step,  setStep]  = useState('confirm'); // confirm | processing | success
+  const [step, setStep] = useState('confirm'); // confirm | processing | success
   const [error, setError] = useState('');
 
   const tier = TIER_CONFIG[moment.tier ?? 'COMMON'] ?? TIER_CONFIG.COMMON;
-  const price = moment.price ?? moment.listPrice ?? moment.estimatedValue ?? 0;
+  // FIX: backend returns priceUsd, not price
+  const price = moment.priceUsd ?? moment.price ?? moment.listPrice ?? moment.estimatedValue ?? 0;
 
   const handleDemoBuy = async () => {
+    // tokenId is a minted blockchain token — never a valid eventId
+    const eventId = moment.eventId;
+    if (!eventId) {
+      setError('Could not determine moment ID — please close and reselect.');
+      return;
+    }
+
     setStep('processing');
     setError('');
     try {
-      await paymentApi.demoConfirm(moment.eventId ?? String(moment.tokenId));
+      // api.js demoConfirm(eventId) wraps it as { eventId } internally
+      await paymentApi.demoConfirm(eventId);
       setStep('success');
       setTimeout(() => {
         onSuccess?.(moment);
@@ -59,7 +68,7 @@ export default function BuyModal({ moment, onClose, onSuccess }) {
               {/* Moment info */}
               <div className="text-center mb-6 p-5" style={{ background: `${tier.color}08`, borderBottom: `1px solid ${tier.color}20` }}>
                 <p className="text-white font-semibold text-lg">{moment.playerName ?? moment.player_name}</p>
-                <p className="text-sm mt-1" style={{ color: tier.color }}>{(moment.stat ?? moment.moment ?? '').replace(/_/g,' ')}</p>
+                <p className="text-sm mt-1" style={{ color: tier.color }}>{(moment.stat ?? moment.moment ?? '').replace(/_/g, ' ')}</p>
                 <p className="text-gray-500 text-xs mt-1">{moment.matchContext}</p>
               </div>
 

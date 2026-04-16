@@ -1,16 +1,20 @@
 import { TIER_CONFIG } from '../data/mockData';
 
 const TIER_META = {
-  COMMON: { icon: '○', glow: false },
-  RARE:   { icon: '◆', glow: false },
-  EPIC:   { icon: '✦', glow: true },
-  LEGEND: { icon: '★', glow: true },
-  ICON:   { icon: '⬡', glow: true },
+  COMMON:    { icon: '○', glow: false },
+  UNCOMMON:  { icon: '◇', glow: false },
+  RARE:      { icon: '◆', glow: false },
+  EPIC:      { icon: '✦', glow: true },
+  LEGENDARY: { icon: '★', glow: true },
+  LEGEND:    { icon: '★', glow: true },
+  ICON:      { icon: '⬡', glow: true },
 };
 
 export default function TierBadge({ tier, size = 'sm', animate = false }) {
-  const cfg = TIER_CONFIG[tier] || TIER_CONFIG.COMMON;
-  const meta = TIER_META[tier] || TIER_META.COMMON;
+  // Normalise: backend may send 'LEGENDARY'; internally we map to 'LEGEND'
+  const normTier = tier === 'LEGENDARY' ? 'LEGEND' : (tier ?? 'COMMON');
+  const cfg  = TIER_CONFIG[normTier]  || TIER_CONFIG.COMMON;
+  const meta = TIER_META[normTier]    || TIER_META.COMMON;
 
   const sizeClass =
     size === 'lg'
@@ -22,9 +26,9 @@ export default function TierBadge({ tier, size = 'sm', animate = false }) {
       className={`
         relative inline-flex items-center gap-1.5
         font-semibold uppercase select-none
-        rounded-xl border
+        rounded-full border
         transition-all duration-300
-        tracking-[0.14em] pr-1
+        tracking-[0.14em]
 
         hover:scale-105 hover:-translate-y-[1px]
         ${animate ? 'animate-pulse' : ''}
@@ -42,7 +46,6 @@ export default function TierBadge({ tier, size = 'sm', animate = false }) {
         className="relative z-10"
         style={{
           fontSize: size === 'lg' ? '0.75rem' : '0.65rem',
-          transform: 'translateX(5px)',
         }}
       >
         {meta.icon}
@@ -72,7 +75,7 @@ export default function TierBadge({ tier, size = 'sm', animate = false }) {
 
       {/* BORDER GLOW AURA */}
       <span
-        className="absolute inset-0 rounded-xl pointer-events-none"
+        className="absolute inset-0 rounded-full pointer-events-none"
         style={{
           boxShadow: `0 0 12px ${cfg.color}30`,
         }}

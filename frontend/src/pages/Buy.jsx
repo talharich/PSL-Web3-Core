@@ -15,10 +15,10 @@ export default function Buy() {
   const { isLoggedIn } = useAuth();
   const { moments, loading: momentsLoading } = useBuyableMoments();
 
-  const [step,     setStep]     = useState(0);
+  const [step, setStep] = useState(0);
   const [selected, setSelected] = useState(null);
-  const [loading,  setLoading]  = useState(false);
-  const [error,    setError]    = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [mintedNFT, setMintedNFT] = useState(null);
   const [showAuth, setShowAuth] = useState(false);
 
@@ -27,35 +27,48 @@ export default function Buy() {
   // Auto-select first moment
   useEffect(() => {
     if (moments?.length && !selected) setSelected(moments[0]);
-  }, [moments]);
+  }, [moments, selected]);
 
   const cfg = selected ? (TIER_CONFIG[selected.tier] ?? TIER_CONFIG.COMMON) : TIER_CONFIG.COMMON;
-  const price = selected?.price ?? selected?.estimatedValue ?? 0;
+  // FIX: backend returns priceUsd, not price
+  const price = selected?.priceUsd ?? selected?.price ?? selected?.estimatedValue ?? 0;
 
   const handleBuy = async () => {
-    if (!isLoggedIn) { setShowAuth(true); return; }
-    if (!selected?.eventId && !selected?.id) {
-      setError('Invalid moment selected');
-      return;
+  if (!isLoggedIn) { setShowAuth(true); return; }
+
+  console.log('[Buy] Selected moment:', selected);
+  console.log('[Buy] selected.eventId:', selected?.eventId);
+  console.log('[Buy] selected.id:', selected?.id);
+  console.log('[Buy] selected.tokenId:', selected?.tokenId);
+
+  // eventId comes from the moments list — use eventId, fall back to id, then tokenId
+  const eventId = selected?.eventId ?? selected?.id ?? selected?.tokenId;
+  console.log('[Buy] Final eventId being sent:', eventId);
+  
+  if (!eventId) {
+    setError('Could not determine moment ID — please reselect.');
+    return;
+  }
+
+  setLoading(true);
+  setError('');
+  try {
+    console.log('[Buy] Calling demoConfirm with eventId:', eventId);
+    const result = await paymentApi.demoConfirm(eventId);
+    console.log('[Buy] Success! Minted NFT:', result);
+    setMintedNFT(result ?? selected);
+    setStep(2);
+  } catch (err) {
+    console.error('[Buy] Error caught:', err);
+    if (err.message?.toLowerCase().includes('unauthorized') || err.message?.includes('401')) {
+      setShowAuth(true);
+    } else {
+      setError(err.message || 'Payment failed. Please try again.');
     }
-    setLoading(true);
-    setError('');
-    try {
-      const eventId = selected.eventId ?? selected.id;
-      const result = await paymentApi.demoConfirm(eventId);
-      setMintedNFT(result ?? selected);
-      setStep(2);
-    } catch (err) {
-      // If auth fails, show auth modal; otherwise show error
-      if (err.message?.toLowerCase().includes('unauthorized') || err.message?.includes('401')) {
-        setShowAuth(true);
-      } else {
-        setError(err.message || 'Payment failed. Please try again.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   /* ───────────────── LOADING ───────────────── */
   if (momentsLoading && !moments?.length) {
@@ -158,6 +171,8 @@ export default function Buy() {
                 const c = TIER_CONFIG[tier] ?? TIER_CONFIG.COMMON;
                 const eventId = m.eventId ?? m.id;
                 const active = (selected?.eventId ?? selected?.id) === eventId;
+                // FIX: use priceUsd in the list too
+                const momentPrice = m.priceUsd ?? m.price ?? m.estimatedValue ?? 0;
                 return (
                   <div
                     key={eventId}
@@ -180,7 +195,7 @@ export default function Buy() {
                       <div className="text-right flex flex-col items-end gap-1">
                         <TierBadge tier={tier} />
                         <span className="text-green-400 text-sm font-bold">
-                          ${(m.price ?? m.estimatedValue ?? 0).toLocaleString()}
+                          ${momentPrice.toLocaleString()}
                         </span>
                       </div>
                     </div>
@@ -208,7 +223,7 @@ export default function Buy() {
               <p className="text-xs text-gray-400">
                 Demo mode: click "Mint" to instantly receive your NFT — no real card charge.
               </p>
-              {['name','number','expiry','cvc'].map(k => (
+              {['name', 'number', 'expiry', 'cvc'].map(k => (
                 <input
                   key={k}
                   placeholder={k === 'name' ? 'Cardholder name' : k === 'number' ? '4242 4242 4242 4242' : k === 'expiry' ? 'MM/YY' : 'CVC'}

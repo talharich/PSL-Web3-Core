@@ -3,14 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { Zap, Wallet } from 'lucide-react';
 import TierBadge from './TierBadge';
 import { TIER_CONFIG } from '../data/mockData';
-import { transformAxis } from 'framer-motion';
 
 const TIER_GRADIENTS = {
-  COMMON: { from: 'rgba(148,163,184,0.12)', mid: 'rgba(148,163,184,0.06)', color: '#94a3b8' },
-  RARE: { from: 'rgba(96,165,250,0.18)', mid: 'rgba(96,165,250,0.08)', color: '#60a5fa' },
-  EPIC: { from: 'rgba(192,132,252,0.18)', mid: 'rgba(192,132,252,0.08)', color: '#c084fc' },
-  LEGEND: { from: 'rgba(251,146,60,0.22)', mid: 'rgba(251,146,60,0.09)', color: '#fb923c' },
-  ICON: { from: 'rgba(34,197,94,0.18)', mid: 'rgba(34,197,94,0.08)', color: '#22c55e' },
+  COMMON:    { from: 'rgba(148,163,184,0.12)', mid: 'rgba(148,163,184,0.06)', color: '#94a3b8' },
+  UNCOMMON:  { from: 'rgba(74,222,128,0.15)',  mid: 'rgba(74,222,128,0.07)',  color: '#4ade80' },
+  RARE:      { from: 'rgba(96,165,250,0.18)',  mid: 'rgba(96,165,250,0.08)',  color: '#60a5fa' },
+  EPIC:      { from: 'rgba(192,132,252,0.18)', mid: 'rgba(192,132,252,0.08)', color: '#c084fc' },
+  LEGENDARY: { from: 'rgba(251,146,60,0.22)',  mid: 'rgba(251,146,60,0.09)',  color: '#fb923c' },
+  LEGEND:    { from: 'rgba(251,146,60,0.22)',  mid: 'rgba(251,146,60,0.09)',  color: '#fb923c' },
+  ICON:      { from: 'rgba(34,197,94,0.18)',   mid: 'rgba(34,197,94,0.08)',   color: '#22c55e' },
 };
 
 /** Derive clean 2-letter initials from a full name */
@@ -104,8 +105,8 @@ export default function NFTCard({ nft, showBuy = false, onBuy, buyingTokenId }) 
   const [videoReady, setVideoReady] = useState(false);
 
   const tierKey = (nft.tier === 'LEGENDARY') ? 'LEGEND' : (nft.tier || 'COMMON');
-  const cfg = TIER_CONFIG[tierKey] || TIER_CONFIG.COMMON;
-  const grad = TIER_GRADIENTS[tierKey] || TIER_GRADIENTS.COMMON;
+  const cfg = TIER_CONFIG[nft.tier] ?? TIER_CONFIG[tierKey] ?? TIER_CONFIG.COMMON;
+  const grad = TIER_GRADIENTS[nft.tier] ?? TIER_GRADIENTS[tierKey] ?? TIER_GRADIENTS.COMMON;
   const scorePercent = Math.min((nft.score / 1000) * 100, 100);
   const hasVideo = Boolean(nft.video);
   const hasImage = Boolean(nft.image);
@@ -141,10 +142,9 @@ export default function NFTCard({ nft, showBuy = false, onBuy, buyingTokenId }) 
       onClick={() => navigate(`/nft/${nft.tokenId}`)}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
-      className="relative overflow-hidden rounded-2xl cursor-pointer border border-white/10 bg-white/5 transition-all duration-500 hover:scale-[1.04] hover:-translate-y-2 hover:border-white/20 hover:shadow-[0_30px_80px_rgba(0,0,0,0.6)] isolate"
+      className="relative overflow-hidden rounded-2xl cursor-pointer border border-white/10 bg-white/5 backdrop-blur-md transition-all duration-500 hover:scale-[1.04] hover:-translate-y-2 hover:border-white/20 hover:shadow-[0_30px_80px_rgba(0,0,0,0.6)] group"
       style={{
         boxShadow: upgraded ? `0 0 60px ${cfg.color}55` : '0 10px 40px rgba(0,0,0,0.4)',
-        contain: 'layout-paint',
       }}
     >
       {/* Tier glow on hover */}
@@ -206,21 +206,9 @@ export default function NFTCard({ nft, showBuy = false, onBuy, buyingTokenId }) 
           </div>
         )}
 
-        {/* Tier badge with dark underlay */}
+        {/* Tier badge */}
         <div className="absolute top-3 left-3 z-10">
-          {/* Dark semi-transparent underlay */}
-          <div 
-            className="absolute rounded-lg pointer-events-none hover:scale-105 hover:-translate-y-[1px] " 
-            style={{ 
-              inset: '-3px',
-              background: 'rgba(0, 0, 0, 0.57)',
-              backdropFilter: 'blur(12px)',
-            }} 
-          />
-          {/* Badge on top */}
-          <div className="relative">
-            <TierBadge tier={nft.tier} animate={upgraded} />
-          </div>
+          <TierBadge tier={nft.tier} animate={upgraded} />
         </div>
 
         {/* Token id */}
@@ -240,10 +228,10 @@ export default function NFTCard({ nft, showBuy = false, onBuy, buyingTokenId }) 
         className="px-4 pt-3 pb-1"
         style={{ background: `linear-gradient(145deg, ${grad.from}, #060d08)` }}
       >
-        <h3 className="text-base font-semibold text-white truncate leading-tight pt-2">
+        <h3 className="text-base font-semibold text-white truncate leading-tight">
           {nft.playerName}
         </h3>
-        <p className="text-xs text-gray-400 truncate pt-1">{nft.team}</p>
+        <p className="text-xs text-gray-400 truncate">{nft.team}</p>
         <p className="text-xs mt-0.5 font-medium truncate" style={{ color: cfg.color }}>
           {nft.moment}
         </p>

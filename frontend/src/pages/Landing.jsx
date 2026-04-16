@@ -38,7 +38,7 @@ export default function Landing() {
     <div className="animate-fade-in">
 
       {/* ──────────── HERO ──────────── */}
-      <section className="relative overflow-hidden min-h-[89vh] flex items-center">
+      <section className="relative overflow-hidden min-h-[88vh] flex items-center">
 
         {/* Grid background */}
         <div className="hero-grid absolute inset-0 pointer-events-none" />
@@ -52,19 +52,19 @@ export default function Landing() {
           style={{ background: 'linear-gradient(0deg, var(--psl-dark), transparent)' }}
         />
 
-        <div className="relative max-w-7xl mx-auto px-6 py-18 w-full">
+        <div className="relative max-w-7xl mx-auto px-6 py-24 w-full">
           <div className="max-w-4xl mx-auto text-center">
 
             {/* Live pill */}
-            <div className="inline-flex items-center gap-2.5 pill pill-live mb-9 animate-slide-up">
+            <div className="inline-flex items-center gap-2.5 pill pill-live mb-10 animate-slide-up">
               <div className="live-dot" />
               <span>PSL 2026 · Live Season · Moments Upgrading Now</span>
             </div>
 
             {/* Headline */}
             <h1
-              className="font-display text-white leading-none mb-7 hero-text-glow animate-fade-in"
-              style={{ fontSize: 'clamp(2.8rem, 8vw, 10rem)', letterSpacing: '0.01em' , lineHeight: '0.9' }}
+              className="font-display text-white leading-none mb-6 hero-text-glow animate-fade-in"
+              style={{ fontSize: 'clamp(2.8rem, 10vw, 9rem)', letterSpacing: '-0.01em' }}
             >
               OWN THE<br />
               <span className="text-gradient-gold">GREATEST</span><br />
@@ -99,8 +99,8 @@ export default function Landing() {
       {/* ──────────── FEATURES ──────────── */}
       <section className="max-w-7xl mx-auto px-6 py-20">
         <div className="text-center mb-12">
-          <p className="section-label text-lg mb-2">Why Dynamic Moments</p>
-          <h2 className="font-display text-7xl text-white">Built Different</h2>
+          <p className="section-label mb-2">Why Dynamic Moments</p>
+          <h2 className="font-display text-4xl text-white">Built Different</h2>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
           {FEATURES.map(({ icon: Icon, title, desc, color, glow }) => (
@@ -130,8 +130,8 @@ export default function Landing() {
       <section className="max-w-7xl mx-auto px-6 pb-20">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <p className="section-label text-lg mb-1">Live PSL 2026</p>
-            <h2 className="font-display text-6xl text-white">Featured Moments</h2>
+            <p className="section-label mb-1">Live PSL 2026</p>
+            <h2 className="font-display text-4xl text-white">Featured Moments</h2>
           </div>
           <Link
             to="/marketplace"
@@ -160,8 +160,8 @@ export default function Landing() {
         }}
       >
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <p className="section-label text-lg mb-3">Smart Contract Enforced</p>
-          <h2 className="font-display text-6xl text-white mb-3">
+          <p className="section-label mb-3">Smart Contract Enforced</p>
+          <h2 className="font-display text-5xl text-white mb-3">
             Every Trade, <span className="text-gradient-gold">Auto Split</span>
           </h2>
           <p className="text-psl-muted font-body mb-14 text-sm">

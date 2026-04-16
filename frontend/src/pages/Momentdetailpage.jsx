@@ -25,6 +25,8 @@ export default function MomentDetailPage() {
   const [loading,   setLoading]   = useState(true);
   const [upgraded,  setUpgraded]  = useState(false);
 
+  const fetchAllRef = useRef(null);
+
   const fetchAll = () => {
     Promise.all([
       nftApi.token(tokenId),
@@ -46,9 +48,12 @@ export default function MomentDetailPage() {
     }).catch(() => {}).finally(() => setLoading(false));
   };
 
+  // Keep ref up to date so the interval always calls the latest version
+  fetchAllRef.current = fetchAll;
+
   useEffect(() => {
-    fetchAll();
-    const interval = setInterval(fetchAll, 3000);
+    fetchAllRef.current();
+    const interval = setInterval(() => fetchAllRef.current(), 3000);
     return () => clearInterval(interval);
   }, [tokenId]);
 

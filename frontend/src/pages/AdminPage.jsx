@@ -56,14 +56,20 @@ export default function AdminPage() {
   };
 
   const calculateScore = async () => {
+    let payload;
     try {
-      const payload = {
-        recentMatches: JSON.parse(scoreForm.recentMatches),
-        milestones: JSON.parse(scoreForm.milestones),
-        tradeVolume: Number(scoreForm.tradeVolume),
+      payload = {
+        recentMatches:  JSON.parse(scoreForm.recentMatches),
+        milestones:     JSON.parse(scoreForm.milestones),
+        tradeVolume:    Number(scoreForm.tradeVolume),
         maxTradeVolume: Number(scoreForm.maxTradeVolume),
-        mintRarity: Number(scoreForm.mintRarity),
+        mintRarity:     Number(scoreForm.mintRarity),
       };
+    } catch {
+      setScoreResult({ error: 'Invalid JSON in Recent Matches or Milestones fields. Please check the format.' });
+      return;
+    }
+    try {
       const data = await oracleApi.calculateScore(payload);
       setScoreResult(data);
     } catch (e) {

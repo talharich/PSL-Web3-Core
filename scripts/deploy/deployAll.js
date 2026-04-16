@@ -23,9 +23,8 @@ async function main() {
   console.log("TBA Implementation:", TBA_ADDRESS);
 
   // 2. PSLMomentNFT
-  const NFT = await ethers.getContractFactory("PSLMomentNFT");
-  const nft = await NFT.deploy(REGISTRY, TBA_ADDRESS);
-  await nft.waitForDeployment();
+  const PSLMomentNFT = await ethers.getContractFactory("contracts/PSLMomentNFT.sol:PSLMomentNFT");
+  const nft = await PSLMomentNFT.deploy(REGISTRY, TBA_ADDRESS);  await nft.waitForDeployment();
   const NFT_ADDRESS = await nft.getAddress();
   console.log("PSLMomentNFT:", NFT_ADDRESS);
 

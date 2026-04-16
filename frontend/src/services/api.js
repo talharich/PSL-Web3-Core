@@ -9,28 +9,44 @@
  *   metadata_controller     → /api/metadata
  */
 
-const BASE = import.meta.env.VITE_API_URL;
+// Use VITE_API_URL if set, otherwise default to localhost dev server
+// The vite proxy in vite.config.js will handle /api requests
+const BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+if (!import.meta.env.VITE_API_URL) {
+  console.log('[api] VITE_API_URL not set, using default: http://localhost:3001/api');
+}
+
 // ─── Token store ─────────────────────────────────────────────────────────────
 let _token = localStorage.getItem('dfm_token') || null;
-
-const getAuthHeader = () => {
-  const token = localStorage.getItem('token'); // or wherever you store it
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
+console.log(`[api] Initialized with token:`, _token ? `${_token.substring(0, 20)}...` : 'NONE');
 
 export function setToken(t) {
   _token = t;
-  if (t) localStorage.setItem('dfm_token', t);
-  else localStorage.removeItem('dfm_token');
+  if (t) {
+    localStorage.setItem('dfm_token', t);
+    console.log(`[api] Token set:`, t.substring(0, 20) + '...');
+  } else {
+    localStorage.removeItem('dfm_token');
+    console.log(`[api] Token cleared`);
+  }
 }
 
 export function getToken() { return _token; }
-export function isLoggedIn() { return Boolean(_token); }
+export function isLoggedIn() { 
+  const loggedIn = Boolean(_token);
+  console.log(`[api] isLoggedIn() →`, loggedIn);
+  return loggedIn;
+}
 
 // ─── Core fetch ──────────────────────────────────────────────────────────────
 async function req(method, path, body, auth = false) {
   const headers = { 'Content-Type': 'application/json' };
-  if (auth && _token) headers['Authorization'] = `Bearer ${_token}`;
+  if (auth && _token) {
+    headers['Authorization'] = `Bearer ${_token}`;
+    console.log(`[api] Sending request with auth token to ${method} ${path}`);
+  } else if (auth && !_token) {
+    console.warn(`[api] ⚠️ Auth requested for ${method} ${path} but no token available!`);
+  }
 
   const res = await fetch(`${BASE}${path}`, {
     method,
@@ -40,6 +56,7 @@ async function req(method, path, body, auth = false) {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }));
+    console.error(`[api] Error ${res.status} on ${method} ${path}:`, err);
     throw new Error(err.message || `HTTP ${res.status}`);
   }
 
@@ -47,28 +64,28 @@ async function req(method, path, body, auth = false) {
   return res.json();
 }
 
-const get = (path, auth = false) => req('GET', path, undefined, auth);
-const post = (path, body, auth = false) => req('POST', path, body, auth);
+const get  = (path, auth = false)       => req('GET',  path, undefined, auth);
+const post = (path, body, auth = false) => req('POST', path, body,      auth);
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
 export const auth = {
-  // ── STEP 1: Request OTP (Signup start)
+  // STEP 1: Request OTP (Signup start)
   signup: (email, password, displayName) =>
     post('/auth/signup/request-otp', { email, password, displayName }),
 
-  // ── STEP 2: Verify OTP (Create account)
+  // STEP 2: Verify OTP (Create account)
   verifyOtp: (email, otp, password, displayName) =>
     post('/auth/signup/verify-otp', { email, otp, password, displayName }),
 
-  // ── Resend OTP
+  // Resend OTP
   resendOtp: (email) =>
     post('/auth/signup/resend-otp', { email }),
 
-  // ── Login
+  // Login
   login: (email, password) =>
     post('/auth/login', { email, password }),
 
-  // ── Get logged-in user
+  // Get logged-in user
   me: () => get('/auth/me', true),
 };
 
@@ -119,10 +136,8 @@ export const marketplace = {
 
   /**
    * GET /marketplace/yield/accumulated
-   * NOTE: In NestJS, static routes take precedence over parameterised ones
-   * so /yield/accumulated should resolve correctly even though /yield/:tokenId
-   * is declared first in the controller. If the backend returns a 400 (ParseIntPipe
-   * rejecting "accumulated"), this call will throw and callers must handle it.
+   * NOTE: In NestJS, static routes take precedence over parameterised ones,
+   * so /yield/accumulated resolves correctly before /yield/:tokenId.
    */
   totalYield: () => get('/marketplace/yield/accumulated'),
 };
@@ -154,24 +169,24 @@ export const oracle = {
 };
 
 // ─── PAYMENT ─────────────────────────────────────────────────────────────────
-
 export const payment = {
   /** GET /payment/moments — buyable moments list */
   moments: () => get('/payment/moments'),
 
-  demoConfirm: (eventId) =>
-    fetch('/api/payment/demo-confirm', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeader(),   // ← this must be here
-      },
-      body: JSON.stringify({ eventId }),
-    }).then(res => {
-      if (!res.ok) throw new Error(`${res.status}`);
-      return res.json();
-    }),
+  /**
+   * POST /payment/intent — creates a Stripe PaymentIntent.
+   * Frontend uses the returned clientSecret with Stripe.js to complete payment.
+   */
+  createIntent: (eventId) => post('/payment/intent', { eventId }, true),
+
+  /**
+   * POST /payment/demo-confirm
+   * Uses the shared post() helper with auth=true, which correctly reads _token
+   * (seeded from 'dfm_token') and prepends BASE from VITE_API_URL.
+   */
+  demoConfirm: (eventId) => post('/payment/demo-confirm', { eventId }, true),
 };
+
 // ─── METADATA ────────────────────────────────────────────────────────────────
 export const metadata = {
   /** POST /metadata/preview  (admin) */

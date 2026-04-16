@@ -197,14 +197,13 @@ export default function Marketplace() {
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filtered.map(nft => (
-                <div key={nft.tokenId} className="transition-all duration-500 transform hover:scale-[1.04] hover:-translate-y-2">
-                  <NFTCard
-                    nft={nft}
-                    showBuy
-                    onBuy={handleBuy}
-                    buyingTokenId={buying}
-                  />
-                </div>
+                <NFTCard
+                  key={nft.tokenId}
+                  nft={nft}
+                  showBuy
+                  onBuy={handleBuy}
+                  buyingTokenId={buying}
+                />
               ))}
             </div>
           )

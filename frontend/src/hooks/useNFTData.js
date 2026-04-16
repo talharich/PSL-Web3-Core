@@ -27,7 +27,7 @@ export function normaliseToken(t) {
     listPrice:      Number(t.listPrice ?? t.list_price)     || null,
     image:          t.image           ?? t.imageUrl         ?? null,
     video:          t.video           ?? t.videoUrl         ?? null,
-    tierIndex:      ['COMMON','RARE','EPIC','LEGEND','ICON'].indexOf(t.tier ?? 'COMMON'),
+    tierIndex:      ['COMMON','UNCOMMON','RARE','EPIC','LEGENDARY','LEGEND','ICON'].indexOf(t.tier ?? 'COMMON'),
   };
 }
 
@@ -96,8 +96,12 @@ export function useNFTList() {
   const load = useCallback(async () => {
     if (fetchPromise) return fetchPromise;
     fetchPromise = fetchNFTs().finally(() => { fetchPromise = null; });
-    const result = await fetchPromise;
-    notify(result);
+    try {
+      const result = await fetchPromise;
+      notify(result);
+    } catch (_) {
+      // fetchPromise already cleared by .finally; keep existing data
+    }
   }, []);
 
   useEffect(() => {
@@ -212,25 +216,41 @@ export function useBuyableMoments() {
     withTimeout(paymentApi.moments())
       .then(data => {
         const arr = Array.isArray(data) ? data : (data.moments ?? []);
+        console.log('[useBuyableMoments] API returned:', arr);
+        
         // If API returns real data, use it; otherwise fall back to mock NFTs
-        setMoments(arr.length > 0 ? arr : MOCK_NFTS.map(n => ({
+        const finalMoments = arr.length > 0 ? arr : MOCK_NFTS.map(n => ({
           ...n,
           eventId: n.tokenId,
-          price:   n.listPrice ?? n.estimatedValue,
-        })));
+          // FIX: use priceUsd consistently so Buy.jsx and BuyModal.jsx
+          // both resolve the price correctly without falling through to $0
+          priceUsd: n.listPrice ?? n.estimatedValue ?? 0,
+        }));
+        
+        console.log('[useBuyableMoments] Final moments:', finalMoments);
+        setMoments(finalMoments);
       })
       .catch(async () => {
+        console.log('[useBuyableMoments] API failed, trying oracle...');
         try {
           const b = await withTimeout(oracleApi.buyable());
-          if (b?.length) { setMoments(b); return; }
+          if (b?.length) { 
+            console.log('[useBuyableMoments] Oracle returned:', b);
+            setMoments(b); 
+            return; 
+          }
           throw new Error('empty');
         } catch {
+          console.log('[useBuyableMoments] All APIs failed, using mock data');
           // Final fallback: use real mock NFTs so Buy page is never blank
-          setMoments(MOCK_NFTS.map(n => ({
+          const fallbackMoments = MOCK_NFTS.map(n => ({
             ...n,
             eventId: n.tokenId,
-            price:   n.listPrice ?? n.estimatedValue,
-          })));
+            // FIX: same fix as above — priceUsd not price
+            priceUsd: n.listPrice ?? n.estimatedValue ?? 0,
+          }));
+          console.log('[useBuyableMoments] Final fallback moments:', fallbackMoments);
+          setMoments(fallbackMoments);
         }
       })
       .finally(() => setLoading(false));

@@ -32,8 +32,8 @@ export function AuthProvider({ children }) {
     return data; // { message: 'OTP sent' }
   }, []);
 
-  const verifyOtp = useCallback(async (email, otp) => {
-    const data = await authApi.verifyOtp(email, otp);
+  const verifyOtp = useCallback(async (email, otp, password, displayName) => {
+    const data = await authApi.verifyOtp(email, otp, password, displayName);
     setToken(data.token);
     setUser(data.user);
     return data;
@@ -52,7 +52,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, verifyOtp, logout, refreshUser, isLoggedIn: Boolean(user) }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, verifyOtp, logout, refreshUser, isLoggedIn: Boolean(user || isLoggedIn()) }}>
       {children}
     </AuthContext.Provider>
   );

@@ -40,9 +40,9 @@ export default {
         },
       },
       fontFamily: {
-        display: ['"Bebas Neue"', 'Impact', 'Arial Black', 'sans-serif'],
+        display: ['"Bebas Neue"', 'cursive'],
         body:    ['"DM Sans"', 'sans-serif'],
-        mono:    ['"Space Mono"', 'Courier New', 'monospace'],
+        mono:    ['"Space Mono"', 'monospace'],
       },
       fontSize: {
         '2xs': ['0.65rem', { lineHeight: '1rem', letterSpacing: '0.08em' }],

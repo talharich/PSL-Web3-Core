@@ -55,7 +55,7 @@ contract PSLMomentNFT is ERC721URIStorage, Ownable {
         external onlyOwner returns (uint256)
     {
         uint256 tokenId = nextTokenId++;
-        _safeMint(to, tokenId);
+        _mint(to, tokenId);
         _setTokenURI(tokenId, uri);
         tokenTier[tokenId] = Tier.COMMON;
         tokenPlayer[tokenId] = _playerId;

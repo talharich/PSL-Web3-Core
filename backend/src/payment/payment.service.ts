@@ -143,29 +143,45 @@ export class PaymentService {
       ? this.chain.nftContract.mintAtTier(toAddress, event.playerId, ipfsUri, tierNum)
       : this.chain.nftContract.mintMoment(toAddress, event.playerId, ipfsUri, tierNum);
 
-    const tx      = await txFn;
-    const receipt = await tx.wait();
-    const tokenId = this.parseMintEvent(receipt);
+    try {
+      this.logger.log(`[MINT] Attempting to mint for ${toAddress}, tier ${tier}`);
+      const tx      = await txFn;
+      this.logger.log(`[MINT] Transaction sent: ${tx.hash}`);
+      const receipt = await tx.wait();
+      this.logger.log(`[MINT] Transaction confirmed`);
+      const tokenId = this.parseMintEvent(receipt);
 
-    this.usersService.addTokenToUser(userId, tokenId);
+      this.usersService.addTokenToUser(userId, tokenId);
 
-    this.eventsGateway.broadcastMint({
-      tokenId,
-      playerId: event.playerId,
-      playerName: event.playerName,
-      tier,
-      txHash: receipt.hash,
-    });
+      this.eventsGateway.broadcastMint({
+        tokenId,
+        playerId: event.playerId,
+        playerName: event.playerName,
+        tier,
+        txHash: receipt.hash,
+      });
 
-    this.logger.log(`Minted token #${tokenId} (${tier}) → ${toAddress} | tx: ${receipt.hash}`);
+      this.logger.log(`✅ Minted token #${tokenId} (${tier}) → ${toAddress} | tx: ${receipt.hash}`);
 
-    return {
-      txHash:        receipt.hash,
-      tokenId,
-      tier,
-      animationUrl:  `https://gateway.pinata.cloud/ipfs/${event.animation_url ?? ''}`,
-      thumbnailUrl:  `https://gateway.pinata.cloud/ipfs/${event.thumbnail ?? ''}`,
-    };
+      return {
+        txHash:        receipt.hash,
+        tokenId,
+        tier,
+        animationUrl:  `https://gateway.pinata.cloud/ipfs/${event.animation_url ?? ''}`,
+        thumbnailUrl:  `https://gateway.pinata.cloud/ipfs/${event.thumbnail ?? ''}`,
+      };
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      this.logger.error(`❌ MINT FAILED: ${errMsg}`);
+      
+      // Log the signer address for debugging
+      this.logger.error(`Signer address: ${this.chain.signer.address}`);
+      this.logger.error(`Target address: ${toAddress}`);
+      this.logger.error(`NFT Contract: ${await this.chain.nftContract.getAddress()}`);
+      
+      // Throw instead of silently falling back to demo
+      throw new Error(`Minting failed: ${errMsg}`);
+    }
   }
 
   // ── Buyable moments list ──────────────────────────────────────────────────
