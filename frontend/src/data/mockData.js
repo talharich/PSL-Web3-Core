@@ -30,6 +30,7 @@ export const MOCK_NFTS = [
 
   // common1.json — Shaheen dismisses Warner
   {
+    eventId:  'EVT-PSL11-M06-001',   // ← ADD THIS
     tokenId:        '001',
     playerId:       'shaheen_afridi',
     playerName:     'Shaheen Shah Afridi',
@@ -57,6 +58,7 @@ export const MOCK_NFTS = [
 
   // common2.json — Shaheen's 4th wicket
   {
+    eventId:  'EVT-PSL11-M06-002',
     tokenId:        '002',
     playerId:       'shaheen_afridi',
     playerName:     'Shaheen Shah Afridi',
@@ -85,6 +87,7 @@ export const MOCK_NFTS = [
 
   // uncommon1.json — Kusal Perera half century
   {
+    eventId:  'EVT-PSL11-M15-001',
     tokenId:        '003',
     playerId:       'kusal_perera',
     playerName:     'Kusal Perera',
@@ -111,7 +114,8 @@ export const MOCK_NFTS = [
   },
 
   // uncommon2.json — Sufyan Muqeem 3 wickets
-  {
+  { 
+    eventId:  'EVT-PSL11-M15-002',
     tokenId:        '004',
     playerId:       'sufyan_muqeem',
     playerName:     'Sufyan Muqeem',
@@ -139,6 +143,7 @@ export const MOCK_NFTS = [
 
   // Rare1.json — Mir Hamza bullet catch
   {
+    eventId:  'EVT-PSL11-M06-003',
     tokenId:        '005',
     playerId:       'mir_hamza',
     playerName:     'Mir Hamza',
@@ -166,6 +171,7 @@ export const MOCK_NFTS = [
 
   // epic1.json — Iftikhar last-over heroics
   {
+    eventId:  'EVT-PSL11-M15-003',
     tokenId:        '006',
     playerId:       'iftikhar_ahmad',
     playerName:     'Iftikhar Ahmad',
@@ -194,6 +200,7 @@ export const MOCK_NFTS = [
 
   // legendary1.json — Iftikhar 4-wicket blitz
   {
+    eventId:  'EVT-PSL11-M15-004',
     tokenId:        '007',
     playerId:       'iftikhar_ahmad',
     playerName:     'Iftikhar Ahmad',

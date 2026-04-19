@@ -11,7 +11,7 @@
 
 // Use VITE_API_URL if set, otherwise default to localhost dev server
 // The vite proxy in vite.config.js will handle /api requests
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const BASE = import.meta.env.VITE_API_URL || '/api';
 if (!import.meta.env.VITE_API_URL) {
   console.log('[api] VITE_API_URL not set, using default: http://localhost:3001/api');
 }

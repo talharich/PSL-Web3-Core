@@ -2,13 +2,14 @@
 // Full ABIs live in frontend/src/abi/ after hardhat compile.
 
 export const NFT_ABI = [
-  'function mintMoment(address to, string playerId, string uri, uint8 initialTier) returns (uint256)',
+  // REMOVE the initialTier param — match the actual deployed contract
+  'function mintMoment(address to, string playerId, string uri) returns (uint256)',
   'function mintAtTier(address to, string playerId, string uri, uint8 tier) returns (uint256)',
   'function upgradeTier(uint256 tokenId, uint8 newTier, string newUri)',
   'function tokenTier(uint256 tokenId) view returns (uint8)',
-  'function tokenPlayer(uint256 tokenId) view returns (string)',   // matches PSLMomentNFT.sol mapping name
+  'function tokenPlayer(uint256 tokenId) view returns (string)',
   'function getTBAAddress(uint256 tokenId) view returns (address)',
-  'function tokensOfPlayer(string playerId) view returns (uint256[])',  // matches PSLMomentNFT.sol function name
+  'function tokensOfPlayer(string playerId) view returns (uint256[])',
   'function ownerOf(uint256 tokenId) view returns (address)',
   'function tokenURI(uint256 tokenId) view returns (string)',
   'function nextTokenId() view returns (uint256)',

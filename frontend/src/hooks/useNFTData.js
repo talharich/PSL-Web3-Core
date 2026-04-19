@@ -245,8 +245,7 @@ export function useBuyableMoments() {
           // Final fallback: use real mock NFTs so Buy page is never blank
           const fallbackMoments = MOCK_NFTS.map(n => ({
             ...n,
-            eventId: n.tokenId,
-            // FIX: same fix as above — priceUsd not price
+            eventId: n.eventId ?? n.tokenId,   // ← was just n.tokenId
             priceUsd: n.listPrice ?? n.estimatedValue ?? 0,
           }));
           console.log('[useBuyableMoments] Final fallback moments:', fallbackMoments);
